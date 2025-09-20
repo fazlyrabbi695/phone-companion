@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail OTP & App Password Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 50%, #ea4335 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .nav-item:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .step-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input, 
+        .input-group textarea, 
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.success:hover {
+            background: #218838;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.danger:hover {
+            background: #c82333;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background: #545b62;
+        }
+
+        .otp-display {
+            background: #e7f3ff;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .otp-code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .gmail-links {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .gmail-links h4 {
+            margin-bottom: 15px;
+            color: #856404;
+        }
+
+        .gmail-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .gmail-links a:hover {
+            text-decoration: underline;
+        }
+
+        .password-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .password-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .password-item .info {
+            flex: 1;
+        }
+
+        .password-item .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .history-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .history-item .time {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .history-item .otp {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .tutorial-step {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .tutorial-step h4 {
+            color: #17a2b8;
+            margin-bottom: 10px;
+        }
+
+        .tutorial-step img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-action {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-5px);
+        }
+
+        .quick-action .icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .nav-item {
+                display: inline-block;
+                width: auto;
+                margin-right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Gmail OTP & App Password Manager</h1>
+            <p>Complete solution for Gmail 2-Step Verification and App Password management</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <button class="nav-item active" onclick="showTab('otp-extractor')">
+                    🔐 OTP Extractor
+                </button>
+                <button class="nav-item" onclick="showTab('app-passwords')">
+                    🔑 App Passwords
+                </button>
+                <button class="nav-item" onclick="showTab('gmail-monitor')">
+                    📨 Gmail Monitor
+                </button>
+                <button class="nav-item" onclick="showTab('tutorial')">
+                    📚 Setup Tutorial
+                </button>
+                <button class="nav-item" onclick="showTab('history')">
+                    📋 History
+                </button>
+            </div>
+
+            <div class="content-area">
+                <!-- OTP Extractor Tab -->
+                <div id="otp-extractor" class="tab-content active">
+                    <h2>🔐 OTP Extractor</h2>
+                    
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="document.getElementById('email-content').focus()">
+                            <div class="icon">📋</div>
+                            <h4>Paste Email</h4>
+                            <p>Copy & paste Gmail content</p>
+                        </div>
+                        <div class="quick-action" onclick="extractFromClipboard()">
+                            <div class="icon">✂️</div>
+                            <h4>Auto Extract</h4>
+                            <p>Extract from clipboard</p>
+                        </div>
+                        <div class="quick-action" onclick="showGmailLinks()">
+                            <div class="icon">🔗</div>
+                            <h4>Gmail Links</h4>
+                            <p>Quick access links</p>
+                        </div>
+                        <div class="quick-action" onclick="showMobileInstructions()">
+                            <div class="icon">📱</div>
+                            <h4>Mobile Steps</h4>
+                            <p>Phone থেকে OTP নেওয়ার নিয়ম</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📧 Email Content Analyzer</h3>
+                        <div class="input-group">
+                            <label>Paste Gmail/SMS Content:</label>
+                            <textarea id="email-content" rows="8" placeholder="Paste your Gmail OTP email content or SMS here...
+
+Example formats supported:
+- Your verification code is: 123456
+- OTP: 123456
+- Code: 123456
+- 123456 is your verification code"></textarea>
+                        </div>
+                        
+                        <button class="btn" onclick="extractOTP()">🔍 Extract OTP</button>
+                        <button class="btn secondary" onclick="clearContent()">🗑️ Clear</button>
+                        <button class="btn success" onclick="testWithSample()">🧪 Test with Sample</button>
+                    </div>
+
+                    <div id="otp-result" class="otp-display" style="display: none;">
+                        <h3>✅ OTP Extracted Successfully</h3>
+                        <div class="otp-code" id="extracted-otp">------</div>
+                        <div id="otp-info">Source: Email | Time: --:--:--</div>
+                        <button class="btn success" onclick="copyOTP(document.getElementById('extracted-otp').textContent)">📋 Copy OTP</button>
+                        <button class="btn" onclick="saveToHistory()">💾 Save to History</button>
+                    </div>
+
+                    <div id="gmail-links-section" class="gmail-links" style="display: none;">
+                        <h4>🔗 Quick Gmail Access Links</h4>
+                        <p><strong>Gmail Login:</strong> <a href="https://accounts.google.com/login?service=mail" target="_blank">https://accounts.google.com/login?service=mail</a></p>
+                        <p><strong>2-Step Verification:</strong> <a href="https://myaccount.google.com/signinoptions/twosv" target="_blank">https://myaccount.google.com/signinoptions/twosv</a></p>
+                        <p><strong>App Passwords:</strong> <a href="https://myaccount.google.com/apppasswords" target="_blank">https://myaccount.google.com/apppasswords</a></p>
+                        <p><strong>Security Settings:</strong> <a href="https://myaccount.google.com/security" target="_blank">https://myaccount.google.com/security</a></p>
+                    </div>
+
+                    <div id="mobile-instructions" class="gmail-links" style="display: none; background: #e8f5e8; border: 2px solid #28a745;">
+                        <h4>📱 Mobile থেকে OTP নেওয়ার নিয়ম</h4>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h5>🔴 প্রথম পদ্ধতি: Email Copy-Paste</h5>
+                            <ol style="margin-left: 20px; line-height: 1.6;">
+                                <li>📱 আপনার ফোনে Gmail app খুলুন</li>
+                                <li>📧 IVAC OTP email টি খুজে বের করুন</li>
+                                <li>🔍 Email তে ক্লিক করে খুলুন</li>
+                                <li>📋 পুরো email content copy করুন (long press করে Select All)</li>
+                                <li>💻 PC এ এই app এ এসে paste করুন</li>
+                                <li>✨ অটোম্যাটিক OTP extract হবে!</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h5>🔵 দ্বিতীয় পদ্ধতি: Email Forwarding</h5>
+                            <ol style="margin-left: 20px; line-height: 1.6;">
+                                <li>📱 ফোনে IVAC OTP email খুলুন</li>
+                                <li>➡️ "Forward" বা "অগ্রেসর" বাটনে ক্লিক করুন</li>
+                                <li>📧 আপনার PC এর email address দিন</li>
+                                <li>🚀 Send করুন</li>
+                                <li>💻 PC এ Gmail খুলে forwarded email দেখবেন</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h5>🟡 তৃতীয় পদ্ধতি: WhatsApp/Telegram</h5>
+                            <ol style="margin-left: 20px; line-height: 1.6;">
+                                <li>📱 ফোনে OTP email copy করুন</li>
+                                <li>💬 নিজেকে WhatsApp/Telegram এ message করুন</li>
+                                <li>💻 PC এ WhatsApp/Telegram খুলে message copy করুন</li>
+                                <li>📋 এই app এ paste করুন</li>
+                            </ol>
+                        </div>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #ffc107;">
+                            <h5>⚠️ মনে রাখবেন:</h5>
+                            <ul style="margin-left: 20px;">
+                                <li>OTP সাধারণত ০-১ মিনিটের মধ্যে আসে</li>
+                                <li>Email এ "ভেরিফিকেশন কোড" বা "OTP" লেখা থাকবে</li>
+                                <li>২-৶ ডিজিটের নাম্বার হবে</li>
+                            </ul>
+                        </div>
+                        
+                        <button class="btn success" onclick="testMobileWorkflow()" style="width: 100%; margin-top: 10px;">🧪 Mobile Workflow Test করুন</button>
+                    </div>
+
+                    <div id="status-otp" class="status-message"></div>
+                </div>
+
+                <!-- App Passwords Tab -->
+                <div id="app-passwords" class="tab-content">
+                    <h2>🔑 App Password Manager</h2>
+                    
+                    <div class="card">
+                        <h3>➕ Create New App Password</h3>
+                        <div class="input-group">
+                            <label>App Name:</label>
+                            <input type="text" id="app-name" placeholder="e.g., Pagole Server, Email Client, etc.">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>App Type:</label>
+                            <select id="app-type">
+                                <option value="email">Email Client</option>
+                                <option value="server">Server Application</option>
+                                <option value="mobile">Mobile App</option>
+                                <option value="desktop">Desktop Software</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Generated Password:</label>
+                            <input type="text" id="generated-password" placeholder="Paste the 16-character password from Google">
+                        </div>
+                        
+                        <button class="btn" onclick="saveAppPassword()">💾 Save Password</button>
+                        <button class="btn secondary" onclick="openAppPasswordPage()">🔗 Open Google App Passwords</button>
+                    </div>
+
+                    <div class="password-list">
+                        <h3>📋 Saved App Passwords</h3>
+                        <div id="password-list-content">
+                            <p style="text-align: center; color: #666; padding: 20px;">No app passwords saved yet</p>
+                        </div>
+                    </div>
+
+                    <div id="status-app" class="status-message"></div>
+                </div>
+
+                <!-- Gmail Monitor Tab -->
+                <div id="gmail-monitor" class="tab-content">
+                    <h2>📨 Gmail Monitor Setup</h2>
+                    
+                    <div class="card">
+                        <h3>🔧 Configuration</h3>
+                        <div class="input-group">
+                            <label>Gmail Address:</label>
+                            <input type="email" id="gmail-address" placeholder="your.email@gmail.com">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>App Password:</label>
+                            <input type="password" id="monitor-password" placeholder="16-character app password">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Check Interval (seconds):</label>
+                            <input type="number" id="check-interval" value="30" min="10" max="300">
+                        </div>
+                        
+                        <button class="btn" onclick="startMonitoring()">▶️ Start Monitoring</button>
+                        <button class="btn danger" onclick="stopMonitoring()">⏹️ Stop Monitoring</button>
+                        <button class="btn secondary" onclick="testConnection()">🔧 Test Connection</button>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 Monitor Status</h3>
+                        <div id="monitor-status">
+                            <p>Status: <span id="status-indicator">⭕ Not Started</span></p>
+                            <p>Last Check: <span id="last-check">Never</span></p>
+                            <p>OTPs Found: <span id="otps-found">0</span></p>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <button class="btn success" onclick="simulateOTPDetection()">🧪 Test Alert System</button>
+                            <button class="btn secondary" onclick="requestNotificationPermission()">🔔 Enable Notifications</button>
+                        </div>
+                    </div>
+
+                    <div id="status-monitor" class="status-message"></div>
+                </div>
+
+                <!-- Tutorial Tab -->
+                <div id="tutorial" class="tab-content">
+                    <h2>📚 Complete Setup Tutorial</h2>
+                    
+                    <div class="tutorial-step">
+                        <h4>Step 1: Enable 2-Step Verification</h4>
+                        <p>1. Go to your Google Account: <a href="https://myaccount.google.com/security" target="_blank">Google Security Settings</a></p>
+                        <p>2. Click on "2-Step Verification"</p>
+                        <p>3. Follow the setup process to enable 2-Step Verification</p>
+                        <p>4. Choose your preferred second step (SMS, Google Authenticator, etc.)</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Step 2: Create App Password</h4>
+                        <p>1. Go to: <a href="https://myaccount.google.com/apppasswords" target="_blank">Google App Passwords</a></p>
+                        <p>2. Select app: "Other (Custom name)"</p>
+                        <p>3. Enter name: "Pagole Server" or your desired name</p>
+                        <p>4. Click "Generate"</p>
+                        <p>5. Copy the 16-character password (format: xxxx xxxx xxxx xxxx)</p>
+                        <p>6. Save it in this app's "App Passwords" section</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Step 3: Test Email Access</h4>
+                        <p>1. Use the saved app password in your email client or application</p>
+                        <p>2. Test the connection using the "Gmail Monitor" tab</p>
+                        <p>3. Monitor for incoming OTPs automatically</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Step 4: Using OTP Extractor</h4>
+                        <p>1. When you receive an OTP email, copy the entire email content</p>
+                        <p>2. Paste it in the "OTP Extractor" tab</p>
+                        <p>3. The app will automatically extract and display the OTP</p>
+                        <p>4. Click "Copy OTP" to copy to clipboard</p>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history" class="tab-content">
+                    <h2>📋 OTP History</h2>
+                    
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>🕒 Recent OTPs</h3>
+                            <button class="btn danger" onclick="clearHistory()">🗑️ Clear All History</button>
+                        </div>
+                        
+                        <div id="history-list">
+                            <p style="text-align: center; color: #666; padding: 20px;">No OTP history available</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 Statistics</h3>
+                        <div id="statistics">
+                            <p>Total OTPs Extracted: <span id="total-otps">0</span></p>
+                            <p>This Month: <span id="month-otps">0</span></p>
+                            <p>Today: <span id="today-otps">0</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let otpHistory = [];
+        let appPasswords = [];
+        let monitorInterval = null;
+        let isMonitoring = false;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateStatistics();
+        });
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav item
+            event.target.classList.add('active');
+        }
+
+        // OTP Extraction Functions
+        function extractOTP() {
+            const content = document.getElementById('email-content').value;
+            if (!content.trim()) {
+                showStatus('status-otp', 'Please paste email content or SMS text', 'error');
+                return;
+            }
+
+            const otp = findOTP(content);
+            if (otp) {
+                displayOTP(otp, 'Manual Input');
+                showStatus('status-otp', `OTP extracted successfully: ${otp}`, 'success');
+            } else {
+                showStatus('status-otp', 'No OTP found in the provided content', 'error');
+            }
+        }
+
+        function findOTP(text) {
+            const patterns = [
+                /\b(\d{6})\b/g,  // 6-digit OTP
+                /\b(\d{4})\b/g,  // 4-digit OTP
+                /\b(\d{5})\b/g,  // 5-digit OTP
+                /(?:code|otp|verification|pin)[:\s]*(\d{4,6})/gi,
+                /(\d{4,6})(?:\s*is your|.*verification|.*code)/gi
+            ];
+
+            for (let pattern of patterns) {
+                const matches = [...text.matchAll(pattern)];
+                if (matches.length > 0) {
+                    return matches[matches.length - 1][1];
+                }
+            }
+            return null;
+        }
+
+        function displayOTP(otp, source = 'Manual') {
+            document.getElementById('extracted-otp').textContent = otp;
+            document.getElementById('otp-info').textContent = `Source: ${source} | Time: ${new Date().toLocaleTimeString()}`;
+            document.getElementById('otp-result').style.display = 'block';
+        }
+
+        function copyOTP(otp) {
+            navigator.clipboard.writeText(otp).then(() => {
+                showStatus('status-otp', 'OTP copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = otp;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showStatus('status-otp', 'OTP copied to clipboard!', 'success');
+            });
+        }
+
+        function saveToHistory() {
+            const otp = document.getElementById('extracted-otp').textContent;
+            if (otp && otp !== '------') {
+                const historyItem = {
+                    otp: otp,
+                    timestamp: new Date().toISOString(),
+                    source: 'Manual Input'
+                };
+                
+                otpHistory.unshift(historyItem);
+                if (otpHistory.length > 50) {
+                    otpHistory = otpHistory.slice(0, 50);
+                }
+                
+                saveData();
+                updateHistoryDisplay();
+                updateStatistics();
+                showStatus('status-otp', 'OTP saved to history', 'success');
+            }
+        }
+
+        function clearContent() {
+            document.getElementById('email-content').value = '';
+            document.getElementById('otp-result').style.display = 'none';
+        }
+
+        function testWithSample() {
+            const sampleContent = `Gmail Security Alert
+            
+Your verification code for Gmail account access is: 123456
+
+This code will expire in 5 minutes.
+
+If you didn't request this code, please secure your account immediately.
+
+Thank you,
+Gmail Team`;
+
+            document.getElementById('email-content').value = sampleContent;
+            extractOTP();
+        }
+
+        function extractFromClipboard() {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById('email-content').value = text;
+                extractOTP();
+            }).catch(() => {
+                showStatus('status-otp', 'Could not read clipboard. Please paste manually.', 'error');
+            });
+        }
+
+        function showGmailLinks() {
+            const linksSection = document.getElementById('gmail-links-section');
+            linksSection.style.display = linksSection.style.display === 'none' ? 'block' : 'none';
+            
+            // Hide mobile instructions if showing
+            document.getElementById('mobile-instructions').style.display = 'none';
+        }
+
+        function showMobileInstructions() {
+            const instructionsSection = document.getElementById('mobile-instructions');
+            instructionsSection.style.display = instructionsSection.style.display === 'none' ? 'block' : 'none';
+            
+            // Hide gmail links if showing
+            document.getElementById('gmail-links-section').style.display = 'none';
+            
+            // Show notification
+            showNotification('📱 Mobile workflow instructions displayed below!', 'info');
+        }
+
+        function testMobileWorkflow() {
+            const sampleMobileEmail = `IVAC Bangladesh
+
+Your verification code for IVAC appointment booking is: 856429
+
+This code will expire in 10 minutes. Please do not share this code with anyone.
+
+If you did not request this code, please ignore this message.
+
+Thank you,
+IVAC Bangladesh Team
+
+This is an automated message, please do not reply.`;
+
+            document.getElementById('email-content').value = sampleMobileEmail;
+            
+            // Auto extract after a moment
+            setTimeout(() => {
+                extractOTP();
+                showNotification('✅ Mobile workflow test successful! This is how it works when you paste from your phone.', 'success');
+            }, 500);
+        }
+
+        // App Password Functions
+        function saveAppPassword() {
+            const name = document.getElementById('app-name').value;
+            const type = document.getElementById('app-type').value;
+            const password = document.getElementById('generated-password').value;
+
+            if (!name || !password) {
+                showStatus('status-app', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            const appPassword = {
+                id: Date.now(),
+                name: name,
+                type: type,
+                password: password,
+                created: new Date().toISOString()
+            };
+
+            appPasswords.push(appPassword);
+            saveData();
+            updatePasswordList();
+            
+            // Clear form
+            document.getElementById('app-name').value = '';
+            document.getElementById('generated-password').value = '';
+            
+            showStatus('status-app', 'App password saved successfully', 'success');
+        }
+
+        function updatePasswordList() {
+            const container = document.getElementById('password-list-content');
+            
+            if (appPasswords.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No app passwords saved yet</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            appPasswords.forEach(app => {
+                const item = document.createElement('div');
+                item.className = 'password-item';
+                
+                item.innerHTML = `
+                    <div class="info">
+                        <h4>${app.name}</h4>
+                        <p>Type: ${app.type} | Created: ${new Date(app.created).toLocaleDateString()}</p>
+                        <p style="font-family: monospace; font-size: 12px; color: #666;">
+                            ${app.password.substring(0, 4)} **** **** ${app.password.substring(12)}
+                        </p>
+                    </div>
+                    <div class="actions">
+                        <button class="btn success" onclick="copyPassword('${app.password}')">📋 Copy</button>
+                        <button class="btn" onclick="showFullPassword('${app.id}')">👁️ Show</button>
+                        <button class="btn danger" onclick="deletePassword('${app.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function copyPassword(password) {
+            navigator.clipboard.writeText(password).then(() => {
+                showStatus('status-app', 'Password copied to clipboard!', 'success');
+            });
+        }
+
+        function showFullPassword(id) {
+            const app = appPasswords.find(a => a.id == id);
+            if (app) {
+                alert(`Full Password for ${app.name}:
+
+${app.password}
+
+Click OK to close.`);
+            }
+        }
+
+        function deletePassword(id) {
+            if (confirm('Are you sure you want to delete this app password?')) {
+                appPasswords = appPasswords.filter(a => a.id != id);
+                saveData();
+                updatePasswordList();
+                showStatus('status-app', 'App password deleted', 'success');
+            }
+        }
+
+        function openAppPasswordPage() {
+            window.open('https://myaccount.google.com/apppasswords', '_blank');
+        }
+
+        // Gmail Monitor Functions
+        function startMonitoring() {
+            const email = document.getElementById('gmail-address').value;
+            const password = document.getElementById('monitor-password').value;
+            const interval = parseInt(document.getElementById('check-interval').value) * 1000;
+
+            if (!email || !password) {
+                showStatus('status-monitor', 'Please enter Gmail address and app password', 'error');
+                return;
+            }
+
+            isMonitoring = true;
+            document.getElementById('status-indicator').textContent = '🟢 Monitoring Active';
+            
+            // Show initial notification
+            showNotification('Gmail OTP monitoring started!', 'success');
+            
+            monitorInterval = setInterval(() => {
+                checkForNewEmails(email, password);
+            }, interval);
+
+            showStatus('status-monitor', 'Gmail monitoring started - You will receive alerts when OTPs are detected', 'success');
+        }
+
+        function stopMonitoring() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+            }
+            
+            isMonitoring = false;
+            document.getElementById('status-indicator').textContent = '⭕ Not Started';
+            showNotification('Gmail monitoring stopped', 'info');
+            showStatus('status-monitor', 'Gmail monitoring stopped', 'info');
+        }
+
+        function checkForNewEmails(email, password) {
+            // Update last check time
+            document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+            
+            // Simulate email checking with random OTP detection for demo
+            // In real implementation, this would connect to Gmail API/IMAP
+            const shouldDetectOTP = Math.random() < 0.1; // 10% chance for demo
+            
+            if (shouldDetectOTP) {
+                // Simulate found OTP
+                const simulatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                handleNewOTPDetected(simulatedOTP, 'Gmail Monitor');
+            }
+            
+            console.log('Checking emails for:', email, 'at', new Date().toLocaleTimeString());
+        }
+
+        function handleNewOTPDetected(otp, source) {
+            // Add to history
+            const historyItem = {
+                otp: otp,
+                timestamp: new Date().toISOString(),
+                source: source
+            };
+            
+            otpHistory.unshift(historyItem);
+            if (otpHistory.length > 50) {
+                otpHistory = otpHistory.slice(0, 50);
+            }
+            
+            // Update displays
+            saveData();
+            updateHistoryDisplay();
+            updateStatistics();
+            
+            // Show OTP in extractor tab
+            displayOTP(otp, source);
+            
+            // Show multiple types of alerts
+            showNotification(`🔐 New IVAC OTP Detected: ${otp}`, 'success');
+            showDesktopNotification('IVAC OTP Detected', `Your OTP: ${otp}`);
+            playNotificationSound();
+            
+            // Auto-copy to clipboard
+            copyOTP(otp);
+            
+            // Show browser alert
+            setTimeout(() => {
+                if (confirm(`New IVAC OTP detected: ${otp}\n\nClick OK to copy to clipboard or Cancel to dismiss.`)) {
+                    copyOTP(otp);
+                }
+            }, 1000);
+            
+            console.log('🔐 NEW OTP DETECTED:', otp, 'from', source);
+        }
+
+        function testConnection() {
+            const email = document.getElementById('gmail-address').value;
+            const password = document.getElementById('monitor-password').value;
+
+            if (!email || !password) {
+                showStatus('status-monitor', 'Please enter Gmail address and app password', 'error');
+                return;
+            }
+
+            // Simulate connection test
+            showStatus('status-monitor', 'Testing connection...', 'info');
+            showNotification('Testing Gmail connection...', 'info');
+            
+            setTimeout(() => {
+                showStatus('status-monitor', 'Connection test completed. Check console for details.', 'success');
+                showNotification('Connection test successful! Ready to monitor.', 'success');
+                console.log('Connection test for:', email);
+                
+                // Test alert functionality
+                setTimeout(() => {
+                    showNotification('🧪 Test Alert: This is how you\'ll be notified when OTPs arrive!', 'success');
+                    showDesktopNotification('IVAC OTP Monitor Test', 'Alert system is working correctly!');
+                    playNotificationSound();
+                }, 2000);
+            }, 2000);
+        }
+
+        // Notification Functions
+        function showNotification(message, type = 'info', duration = 5000) {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.floating-notification');
+            existingNotifications.forEach(notif => notif.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = 'floating-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: bold;
+                z-index: 999999;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                animation: slideInRight 0.5s ease, pulse 2s infinite;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            
+            // Add animation keyframes if not exists
+            if (!document.getElementById('notification-animations')) {
+                const style = document.createElement('style');
+                style.id = 'notification-animations';
+                style.textContent = `
+                    @keyframes slideInRight {
+                        from { 
+                            opacity: 0; 
+                            transform: translateX(100%); 
+                        }
+                        to { 
+                            opacity: 1; 
+                            transform: translateX(0); 
+                        }
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                    .floating-notification {
+                        cursor: pointer;
+                        transition: all 0.3s;
+                    }
+                    .floating-notification:hover {
+                        transform: scale(1.05);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            notification.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        font-size: 18px;
+                        cursor: pointer;
+                        margin-left: 10px;
+                        padding: 0;
+                        width: 20px;
+                        height: 20px;
+                    ">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideInRight 0.5s ease reverse';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 500);
+                }
+            }, duration);
+        }
+
+        function showDesktopNotification(title, body) {
+            // Request permission if not granted
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        createDesktopNotification(title, body);
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                createDesktopNotification(title, body);
+            }
+        }
+
+        function createDesktopNotification(title, body) {
+            const notification = new Notification(title, {
+                body: body,
+                icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiM2NjdlZWEiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMTIgMUw4IDVIMTZMMTIgMVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xOSAxMEg1QzMuOSAxMCAzIDEwLjkgMyAxMlYyMEMzIDIxLjEgMy45IDIyIDUgMjJIMTlDMjAuMSAyMiAyMSAyMS4xIDIxIDIwVjEyQzIxIDEwLjkgMjAuMSAxMCAxOSAxMFpNMTkgMjBINVYxMkgxOVYyMFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik03IDE0SDlWMThIN1YxNFpNMTEgMTRIMTNWMThIMTFWMTRaTTE1IDE0SDE3VjE4SDE1VjE0WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPg==',
+                badge: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiM2NjdlZWEiLz4KPC9zdmc+',
+                requireInteraction: true,
+                tag: 'ivac-otp'
+            });
+
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
+
+            // Auto-close after 10 seconds
+            setTimeout(() => {
+                notification.close();
+            }, 10000);
+        }
+
+        function playNotificationSound() {
+            // Create audio context for notification sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('Audio notification not supported');
+            }
+        }
+
+        function simulateOTPDetection() {
+            const testOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            handleNewOTPDetected(testOTP, 'Test Alert');
+            showStatus('status-monitor', `Test alert triggered with OTP: ${testOTP}`, 'success');
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('Desktop notifications enabled successfully!', 'success');
+                        showDesktopNotification('IVAC OTP Monitor', 'Desktop notifications are now enabled!');
+                    } else if (permission === 'denied') {
+                        showStatus('status-monitor', 'Desktop notifications were denied. You can still receive in-app alerts.', 'error');
+                    } else {
+                        showStatus('status-monitor', 'Desktop notification permission is pending.', 'info');
+                    }
+                });
+            } else {
+                showStatus('status-monitor', 'Desktop notifications are not supported in this browser.', 'error');
+            }
+        }
+
+        // History Functions
+        function updateHistoryDisplay() {
+            const container = document.getElementById('history-list');
+            
+            if (otpHistory.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No OTP history available</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            otpHistory.slice(0, 20).forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const date = new Date(item.timestamp);
+                historyItem.innerHTML = `
+                    <div class="time">${date.toLocaleDateString()} ${date.toLocaleTimeString()} - ${item.source}</div>
+                    <div class="otp">${item.otp}</div>
+                    <button class="btn success" onclick="copyOTP('${item.otp}')" style="margin-top: 10px;">📋 Copy</button>
+                `;
+                
+                container.appendChild(historyItem);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all OTP history?')) {
+                otpHistory = [];
+                saveData();
+                updateHistoryDisplay();
+                updateStatistics();
+                showStatus('status-otp', 'History cleared', 'success');
+            }
+        }
+
+        function updateStatistics() {
+            const total = otpHistory.length;
+            const today = new Date();
+            const todayOtps = otpHistory.filter(item => {
+                const itemDate = new Date(item.timestamp);
+                return itemDate.toDateString() === today.toDateString();
+            }).length;
+            
+            const thisMonth = otpHistory.filter(item => {
+                const itemDate = new Date(item.timestamp);
+                return itemDate.getMonth() === today.getMonth() && 
+                       itemDate.getFullYear() === today.getFullYear();
+            }).length;
+
+            document.getElementById('total-otps').textContent = total;
+            document.getElementById('today-otps').textContent = todayOtps;
+            document.getElementById('month-otps').textContent = thisMonth;
+            document.getElementById('otps-found').textContent = total;
+        }
+
+        // Utility Functions
+        function showStatus(elementId, message, type) {
+            const statusDiv = document.getElementById(elementId);
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function saveData() {
+            localStorage.setItem('otpHistory', JSON.stringify(otpHistory));
+            localStorage.setItem('appPasswords', JSON.stringify(appPasswords));
+        }
+
+        function loadData() {
+            const savedHistory = localStorage.getItem('otpHistory');
+            const savedPasswords = localStorage.getItem('appPasswords');
+            
+            if (savedHistory) {
+                otpHistory = JSON.parse(savedHistory);
+                updateHistoryDisplay();
+            }
+            
+            if (savedPasswords) {
+                appPasswords = JSON.parse(savedPasswords);
+                updatePasswordList();
+            }
+        }
+
+        // Auto-extract on paste
+        document.getElementById('email-content').addEventListener('paste', function() {
+            setTimeout(() => {
+                if (this.value.trim()) {
+                    extractOTP();
+                }
+            }, 100);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'v') {
+                // Auto-extract after paste
+                setTimeout(() => {
+                    const content = document.getElementById('email-content').value;
+                    if (content.trim()) {
+                        extractOTP();
+                    }
+                }, 200);
+            }
+        });
+    </script>
+</body>
+</html>

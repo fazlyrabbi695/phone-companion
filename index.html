@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 IVAC OTP Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px 20px;
+        }
+
+        .device-detector {
+            margin-bottom: 30px;
+        }
+
+        .device-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px 0;
+            transition: all 0.3s;
+        }
+
+        .device-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+        }
+
+        .device-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn.mobile {
+            background: #28a745;
+        }
+
+        .btn.mobile:hover {
+            background: #218838;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 IVAC OTP Monitor</h1>
+            <p>Choose your device to get started</p>
+        </div>
+
+        <div class="content">
+            <div class="device-detector">
+                <div class="device-card" id="mobile-card">
+                    <div class="device-icon">📱</div>
+                    <h3>Mobile Phone</h3>
+                    <p>Detect and send OTPs from your phone</p>
+                    <a href="phone-companion.html" class="btn mobile">📱 Open Phone App</a>
+                </div>
+
+                <div class="device-card" id="desktop-card">
+                    <div class="device-icon">💻</div>
+                    <h3>PC / Desktop</h3>
+                    <p>Receive and monitor OTPs on your computer</p>
+                    <a href="offline-otp-monitor.html" class="btn">💻 Open PC Monitor</a>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h4>🚀 Quick Setup Instructions:</h4>
+                <ol style="margin-left: 20px; line-height: 1.6;">
+                    <li><strong>PC:</strong> Open PC Monitor and click "Phone Sync"</li>
+                    <li><strong>Mobile:</strong> Open Phone App and scan QR code</li>
+                    <li><strong>Permissions:</strong> Grant SMS/Email access on phone</li>
+                    <li><strong>Ready:</strong> OTPs will sync automatically!</li>
+                </ol>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <p style="color: #666; font-size: 14px;">
+                    🔒 All data stays on your devices. No external servers involved.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect device type and highlight appropriate option
+        function detectDevice() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                document.getElementById('mobile-card').style.borderColor = '#28a745';
+                document.getElementById('mobile-card').style.background = '#e8f5e8';
+                
+                // Auto-redirect to phone app after 3 seconds
+                setTimeout(() => {
+                    if (confirm('Mobile device detected! Open Phone Companion app?')) {
+                        window.location.href = 'phone-companion.html';
+                    }
+                }, 2000);
+            } else {
+                document.getElementById('desktop-card').style.borderColor = '#667eea';
+                document.getElementById('desktop-card').style.background = '#e8f4fd';
+            }
+        }
+
+        // Run device detection on page load
+        detectDevice();
+    </script>
+</body>
+</html>

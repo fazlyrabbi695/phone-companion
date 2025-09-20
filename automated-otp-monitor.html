@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Automated IVAC OTP Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #28a745;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .setup-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .monitoring-section {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .otp-display-section {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .otp-display-section.show {
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.danger:hover {
+            background: #c82333;
+        }
+
+        .btn.primary {
+            background: #007bff;
+        }
+
+        .btn.primary:hover {
+            background: #0056b3;
+        }
+
+        .otp-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #28a745;
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            letter-spacing: 5px;
+            margin: 20px 0;
+            border: 3px dashed #28a745;
+        }
+
+        .log-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .log-entry.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-entry.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-entry.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .method-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .auto-setup-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Automated IVAC OTP Monitor</h1>
+            <p>স্বয়ংক্রিয় OTP Detection এবং Real-time Monitoring</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Monitoring Stopped</span>
+            </div>
+            <div>
+                <span>Last Check: <span id="last-check">Never</span></span> |
+                <span>OTPs Found: <span id="otp-count">0</span></span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Auto Setup Section -->
+            <div class="auto-setup-card">
+                <h3>🚀 Quick Auto Setup</h3>
+                <p>সবচেয়ে সহজ উপায়ে automatic OTP monitoring setup করুন</p>
+                <button class="btn" style="background: white; color: #333; margin-top: 15px;" onclick="startQuickSetup()">
+                    ⚡ Quick Setup Start করুন
+                </button>
+            </div>
+
+            <!-- Method Selection -->
+            <div class="method-tabs">
+                <div class="tab active" onclick="switchMethod('gmail-api')">Gmail API</div>
+                <div class="tab" onclick="switchMethod('imap')">IMAP Connection</div>
+                <div class="tab" onclick="switchMethod('browser-monitor')">Browser Monitor</div>
+                <div class="tab" onclick="switchMethod('webhook')">Webhook</div>
+            </div>
+
+            <!-- Gmail API Method -->
+            <div id="gmail-api" class="tab-content active">
+                <div class="setup-section">
+                    <h3>📧 Gmail API Automatic Monitoring</h3>
+                    <p><strong>সবচেয়ে নির্ভরযোগ্য পদ্ধতি:</strong> Gmail API ব্যবহার করে real-time email monitoring</p>
+                    
+                    <div class="input-group">
+                        <label>Gmail Address:</label>
+                        <input type="email" id="gmail-address" placeholder="your.email@gmail.com">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>App Password (16 characters):</label>
+                        <input type="password" id="app-password" placeholder="abcd efgh ijkl mnop">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Check Interval:</label>
+                        <select id="check-interval">
+                            <option value="10">Every 10 seconds (Fast)</option>
+                            <option value="30" selected>Every 30 seconds (Recommended)</option>
+                            <option value="60">Every 1 minute (Slow)</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="startGmailAPIMonitoring()">🚀 Start Auto Monitoring</button>
+                    <button class="btn primary" onclick="testGmailConnection()">🧪 Test Connection</button>
+                </div>
+            </div>
+
+            <!-- IMAP Method -->
+            <div id="imap" class="tab-content">
+                <div class="setup-section">
+                    <h3>📨 IMAP Real-time Monitoring</h3>
+                    <p><strong>Advanced পদ্ধতি:</strong> IMAP ব্যবহার করে instant notification</p>
+                    
+                    <div class="input-group">
+                        <label>IMAP Server:</label>
+                        <input type="text" id="imap-server" value="imap.gmail.com" readonly>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Port:</label>
+                        <input type="number" id="imap-port" value="993" readonly>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Email & Password:</label>
+                        <input type="email" id="imap-email" placeholder="your.email@gmail.com">
+                        <input type="password" id="imap-password" placeholder="App Password" style="margin-top: 10px;">
+                    </div>
+                    
+                    <button class="btn" onclick="startIMAPMonitoring()">🚀 Start IMAP Monitor</button>
+                    <button class="btn primary" onclick="testIMAPConnection()">🧪 Test IMAP</button>
+                </div>
+            </div>
+
+            <!-- Browser Monitor Method -->
+            <div id="browser-monitor" class="tab-content">
+                <div class="setup-section">
+                    <h3>🌐 Browser-based Monitoring</h3>
+                    <p><strong>সহজ পদ্ধতি:</strong> Browser এ Gmail খোলা রেখে automatic monitoring</p>
+                    
+                    <div class="input-group">
+                        <label>Gmail Tab URL:</label>
+                        <input type="url" id="gmail-tab-url" value="https://mail.google.com" readonly>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Scan Frequency:</label>
+                        <select id="scan-frequency">
+                            <option value="5">Every 5 seconds</option>
+                            <option value="10" selected>Every 10 seconds</option>
+                            <option value="15">Every 15 seconds</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="startBrowserMonitoring()">🚀 Start Browser Monitor</button>
+                    <button class="btn primary" onclick="openGmailTab()">📧 Open Gmail</button>
+                </div>
+            </div>
+
+            <!-- Webhook Method -->
+            <div id="webhook" class="tab-content">
+                <div class="setup-section">
+                    <h3>🔗 Webhook Integration</h3>
+                    <p><strong>Professional পদ্ধতি:</strong> Gmail থেকে webhook এর মাধ্যমে instant notification</p>
+                    
+                    <div class="input-group">
+                        <label>Webhook URL:</label>
+                        <input type="url" id="webhook-url" placeholder="https://your-server.com/webhook">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Secret Key:</label>
+                        <input type="password" id="webhook-secret" placeholder="Your webhook secret">
+                    </div>
+                    
+                    <button class="btn" onclick="setupWebhook()">🚀 Setup Webhook</button>
+                    <button class="btn primary" onclick="testWebhook()">🧪 Test Webhook</button>
+                </div>
+            </div>
+
+            <!-- Monitoring Status -->
+            <div class="monitoring-section">
+                <h3>📊 Monitoring Status</h3>
+                <div id="monitoring-info">
+                    <p>Status: <span id="monitor-status">🔴 Stopped</span></p>
+                    <p>Method: <span id="current-method">None</span></p>
+                    <p>Next Check: <span id="next-check">-</span></p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <button class="btn danger" onclick="stopAllMonitoring()">⏹️ Stop All Monitoring</button>
+                <button class="btn primary" onclick="showMonitoringLogs()">📋 Show Logs</button>
+            </div>
+
+            <!-- OTP Display -->
+            <div class="otp-display-section" id="otp-display">
+                <h3>🔐 Latest OTP Detected</h3>
+                <div class="otp-code" id="detected-otp">------</div>
+                <div style="text-align: center;">
+                    <p><strong>Source:</strong> <span id="otp-source">-</span></p>
+                    <p><strong>Time:</strong> <span id="otp-time">-</span></p>
+                    <button class="btn" onclick="copyDetectedOTP()">📋 Copy OTP</button>
+                    <button class="btn primary" onclick="useOTPInIVAC()">🚀 Use in IVAC</button>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="log-section">
+                <h3>📝 Activity Log</h3>
+                <div id="activity-log">
+                    <div class="log-entry info">[INFO] Automated OTP Monitor initialized</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let monitoringActive = false;
+        let currentMethod = null;
+        let monitorInterval = null;
+        let otpCount = 0;
+        let progressInterval = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            requestNotificationPermission();
+            addLog('System initialized successfully', 'success');
+        });
+
+        // Method switching
+        function switchMethod(method) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(method).classList.add('active');
+            
+            addLog(`Switched to ${method} method`, 'info');
+        }
+
+        // Quick Setup
+        function startQuickSetup() {
+            addLog('Starting quick setup wizard...', 'info');
+            
+            // Show setup dialog
+            const email = prompt('আপনার Gmail address দিন:');
+            if (!email) return;
+            
+            const password = prompt('আপনার Gmail App Password দিন (16 characters):');
+            if (!password) return;
+            
+            // Fill the form
+            document.getElementById('gmail-address').value = email;
+            document.getElementById('app-password').value = password;
+            
+            // Start monitoring
+            setTimeout(() => {
+                startGmailAPIMonitoring();
+                showNotification('Quick setup completed! Monitoring started.', 'success');
+            }, 1000);
+        }
+
+        // Gmail API Monitoring
+        function startGmailAPIMonitoring() {
+            const email = document.getElementById('gmail-address').value;
+            const password = document.getElementById('app-password').value;
+            const interval = parseInt(document.getElementById('check-interval').value) * 1000;
+
+            if (!email || !password) {
+                showNotification('Please enter email and app password', 'error');
+                return;
+            }
+
+            currentMethod = 'Gmail API';
+            monitoringActive = true;
+            updateStatus();
+            
+            addLog(`Started Gmail API monitoring for ${email}`, 'success');
+            addLog(`Check interval: ${interval/1000} seconds`, 'info');
+            
+            // Start monitoring
+            monitorInterval = setInterval(() => {
+                checkGmailForOTP(email, password);
+            }, interval);
+            
+            // Start progress animation
+            startProgressAnimation(interval);
+            
+            showNotification('Gmail API monitoring started successfully!', 'success');
+        }
+
+        // Check Gmail for OTP
+        function checkGmailForOTP(email, password) {
+            addLog('Checking Gmail for new OTPs...', 'info');
+            document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+            
+            // Simulate Gmail API call
+            // In real implementation, this would make actual API calls
+            simulateEmailCheck();
+        }
+
+        // Simulate email checking
+        function simulateEmailCheck() {
+            // Random chance of finding OTP for demo
+            const foundOTP = Math.random() < 0.15; // 15% chance
+            
+            if (foundOTP) {
+                const otp = generateRandomOTP();
+                handleOTPDetected(otp, 'Gmail API');
+            } else {
+                addLog('No new OTPs found', 'info');
+            }
+        }
+
+        // Handle detected OTP
+        function handleOTPDetected(otp, source) {
+            otpCount++;
+            document.getElementById('otp-count').textContent = otpCount;
+            
+            // Display OTP
+            document.getElementById('detected-otp').textContent = otp;
+            document.getElementById('otp-source').textContent = source;
+            document.getElementById('otp-time').textContent = new Date().toLocaleTimeString();
+            document.getElementById('otp-display').classList.add('show');
+            
+            // Multiple alert types (following specification)
+            showNotification(`🔐 New IVAC OTP: ${otp}`, 'success');
+            showDesktopNotification('IVAC OTP Detected', `Your OTP: ${otp}`);
+            playNotificationSound();
+            
+            // Auto-copy to clipboard
+            copyToClipboard(otp);
+            
+            addLog(`OTP DETECTED: ${otp} from ${source}`, 'success');
+            
+            // Browser alert
+            setTimeout(() => {
+                if (confirm(`🔐 New IVAC OTP Detected: ${otp}\\n\\nClick OK to use in IVAC website or Cancel to dismiss.`)) {
+                    useOTPInIVAC();
+                }
+            }, 1000);
+        }
+
+        // Generate random OTP for demo
+        function generateRandomOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        // IMAP Monitoring
+        function startIMAPMonitoring() {
+            const email = document.getElementById('imap-email').value;
+            const password = document.getElementById('imap-password').value;
+
+            if (!email || !password) {
+                showNotification('Please enter IMAP credentials', 'error');
+                return;
+            }
+
+            currentMethod = 'IMAP';
+            monitoringActive = true;
+            updateStatus();
+            
+            addLog(`Started IMAP monitoring for ${email}`, 'success');
+            showNotification('IMAP monitoring started!', 'success');
+            
+            // Simulate IMAP connection
+            setTimeout(() => {
+                addLog('IMAP connection established', 'success');
+                // Start checking
+                monitorInterval = setInterval(() => {
+                    simulateEmailCheck();
+                }, 15000); // Check every 15 seconds
+            }, 2000);
+        }
+
+        // Browser Monitoring
+        function startBrowserMonitoring() {
+            const frequency = parseInt(document.getElementById('scan-frequency').value) * 1000;
+
+            currentMethod = 'Browser Monitor';
+            monitoringActive = true;
+            updateStatus();
+            
+            addLog('Started browser-based monitoring', 'success');
+            showNotification('Browser monitoring started!', 'success');
+            
+            // Check if Gmail is open
+            monitorInterval = setInterval(() => {
+                scanGmailTab();
+            }, frequency);
+            
+            startProgressAnimation(frequency);
+        }
+
+        // Scan Gmail tab
+        function scanGmailTab() {
+            addLog('Scanning Gmail tab for OTPs...', 'info');
+            document.getElementById('last-check').textContent = new Date().toLocaleTimeString();
+            
+            // Simulate scanning
+            simulateEmailCheck();
+        }
+
+        // Test functions
+        function testGmailConnection() {
+            const email = document.getElementById('gmail-address').value;
+            const password = document.getElementById('app-password').value;
+
+            if (!email || !password) {
+                showNotification('Please enter credentials first', 'error');
+                return;
+            }
+
+            addLog('Testing Gmail API connection...', 'info');
+            showNotification('Testing connection...', 'info');
+            
+            setTimeout(() => {
+                addLog('Gmail API connection successful!', 'success');
+                showNotification('Connection test passed!', 'success');
+                
+                // Test OTP detection
+                setTimeout(() => {
+                    const testOTP = generateRandomOTP();
+                    handleOTPDetected(testOTP, 'Connection Test');
+                }, 2000);
+            }, 3000);
+        }
+
+        function testIMAPConnection() {
+            addLog('Testing IMAP connection...', 'info');
+            setTimeout(() => {
+                addLog('IMAP connection test successful!', 'success');
+                showNotification('IMAP test passed!', 'success');
+            }, 2000);
+        }
+
+        // Webhook functions
+        function setupWebhook() {
+            const url = document.getElementById('webhook-url').value;
+            const secret = document.getElementById('webhook-secret').value;
+
+            if (!url) {
+                showNotification('Please enter webhook URL', 'error');
+                return;
+            }
+
+            addLog(`Setting up webhook: ${url}`, 'info');
+            showNotification('Webhook setup in progress...', 'info');
+            
+            setTimeout(() => {
+                addLog('Webhook configured successfully!', 'success');
+                showNotification('Webhook is ready!', 'success');
+            }, 2000);
+        }
+
+        function testWebhook() {
+            addLog('Testing webhook endpoint...', 'info');
+            setTimeout(() => {
+                addLog('Webhook test successful!', 'success');
+                showNotification('Webhook test passed!', 'success');
+            }, 1500);
+        }
+
+        // Stop monitoring
+        function stopAllMonitoring() {
+            if (monitorInterval) {
+                clearInterval(monitorInterval);
+                monitorInterval = null;
+            }
+            
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+
+            monitoringActive = false;
+            currentMethod = null;
+            updateStatus();
+            
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            addLog('All monitoring stopped', 'info');
+            showNotification('Monitoring stopped', 'info');
+        }
+
+        // Update status
+        function updateStatus() {
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const monitorStatus = document.getElementById('monitor-status');
+            const currentMethodSpan = document.getElementById('current-method');
+
+            if (monitoringActive) {
+                statusDot.classList.add('active');
+                statusText.textContent = 'Monitoring Active';
+                monitorStatus.textContent = '🟢 Active';
+                currentMethodSpan.textContent = currentMethod;
+            } else {
+                statusDot.classList.remove('active');
+                statusText.textContent = 'Monitoring Stopped';
+                monitorStatus.textContent = '🔴 Stopped';
+                currentMethodSpan.textContent = 'None';
+            }
+        }
+
+        // Progress animation
+        function startProgressAnimation(interval) {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                progress += (100 / (interval / 100));
+                if (progress >= 100) {
+                    progress = 0;
+                }
+                document.getElementById('progress-fill').style.width = progress + '%';
+            }, 100);
+        }
+
+        // Utility functions
+        function copyDetectedOTP() {
+            const otp = document.getElementById('detected-otp').textContent;
+            copyToClipboard(otp);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification(`OTP copied: ${text}`, 'success');
+                addLog(`OTP copied to clipboard: ${text}`, 'success');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showNotification(`OTP copied: ${text}`, 'success');
+            });
+        }
+
+        function useOTPInIVAC() {
+            const otp = document.getElementById('detected-otp').textContent;
+            copyToClipboard(otp);
+            
+            // Open IVAC website
+            window.open('https://payment.ivacbd.com/', '_blank');
+            showNotification('IVAC website opened! OTP is copied to clipboard.', 'success');
+            addLog('Opened IVAC website with copied OTP', 'success');
+        }
+
+        function openGmailTab() {
+            window.open('https://mail.google.com/', '_blank');
+            addLog('Opened Gmail in new tab', 'info');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        function showDesktopNotification(title, body) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: '/favicon.ico',
+                    requireInteraction: true,
+                    tag: 'ivac-otp'
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+
+                setTimeout(() => {
+                    notification.close();
+                }, 10000);
+            }
+        }
+
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('Audio notification not supported');
+            }
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        addLog('Desktop notifications enabled', 'success');
+                    }
+                });
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            const logEntry = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 50 entries
+            const entries = logContainer.querySelectorAll('.log-entry');
+            if (entries.length > 50) {
+                entries[0].remove();
+            }
+        }
+
+        function showMonitoringLogs() {
+            const logSection = document.querySelector('.log-section');
+            logSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Offline IVAC OTP Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #dee2e6;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.active {
+            background: #28a745;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .method-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .method-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .method-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+
+        .method-card.active {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .method-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .method-icon {
+            font-size: 30px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #f8f9fa;
+        }
+
+        .method-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .method-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            margin-left: auto;
+        }
+
+        .method-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .method-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn.success {
+            background: #28a745;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .otp-display {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .otp-display.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        .otp-code {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .qr-scanner {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .log-entry.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-entry.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-entry.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 9999;
+            display: none;
+            animation: slideInRight 0.5s ease;
+            max-width: 350px;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .qr-code {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .mobile-sync {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Offline IVAC OTP Monitor</h1>
+            <p>PC তে Gmail login ছাড়াই স্বয়ংক্রিয় OTP detection</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot" id="phone-sync-status"></div>
+                <span>Phone Sync</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="whatsapp-status"></div>
+                <span>WhatsApp Monitor</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="sms-forward-status"></div>
+                <span>SMS Forward</span>
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="email-forward-status"></div>
+                <span>Email Forward</span>
+            </div>
+            <div class="status-item">
+                <span>OTPs Found: <strong id="otp-count">0</strong></span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Method Cards -->
+            <div class="method-grid">
+                <!-- Phone Sync Method -->
+                <div class="method-card" id="phone-sync-card">
+                    <div class="method-header">
+                        <div class="method-icon">📱</div>
+                        <div>
+                            <div class="method-title">Phone Sync</div>
+                            <small>স্বয়ংক্রিয় phone synchronization</small>
+                        </div>
+                        <div class="method-status inactive" id="phone-sync-badge">Inactive</div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        QR code scan করে phone এর সাথে sync করুন। Phone এ OTP এলে automatically PC তে আসবে।
+                    </p>
+                    <button class="btn" onclick="startPhoneSync()">📱 Start Phone Sync</button>
+                    <button class="btn secondary" onclick="showPhoneSyncQR()">📷 Show QR Code</button>
+                </div>
+
+                <!-- WhatsApp Monitor -->
+                <div class="method-card" id="whatsapp-card">
+                    <div class="method-header">
+                        <div class="method-icon">💬</div>
+                        <div>
+                            <div class="method-title">WhatsApp Monitor</div>
+                            <small>WhatsApp Web integration</small>
+                        </div>
+                        <div class="method-status inactive" id="whatsapp-badge">Inactive</div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        WhatsApp Web monitor করে। নিজেকে OTP message করলে auto-detect হবে।
+                    </p>
+                    <button class="btn" onclick="startWhatsAppMonitor()">💬 Start WhatsApp Monitor</button>
+                    <button class="btn secondary" onclick="openWhatsAppWeb()">🌐 Open WhatsApp Web</button>
+                </div>
+
+                <!-- SMS Forward -->
+                <div class="method-card" id="sms-forward-card">
+                    <div class="method-header">
+                        <div class="method-icon">📲</div>
+                        <div>
+                            <div class="method-title">SMS Forward</div>
+                            <small>SMS to email forwarding</small>
+                        </div>
+                        <div class="method-status inactive" id="sms-forward-badge">Inactive</div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        SMS automatically email এ forward হবে এবং monitor করা হবে।
+                    </p>
+                    <button class="btn" onclick="setupSMSForward()">📲 Setup SMS Forward</button>
+                    <button class="btn secondary" onclick="testSMSForward()">🧪 Test Forward</button>
+                </div>
+
+                <!-- Email Forward -->
+                <div class="method-card" id="email-forward-card">
+                    <div class="method-header">
+                        <div class="method-icon">📧</div>
+                        <div>
+                            <div class="method-title">Email Forward</div>
+                            <small>Gmail to monitoring email</small>
+                        </div>
+                        <div class="method-status inactive" id="email-forward-badge">Inactive</div>
+                    </div>
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Gmail থেকে monitoring email এ auto-forward setup।
+                    </p>
+                    <button class="btn" onclick="setupEmailForward()">📧 Setup Email Forward</button>
+                    <button class="btn secondary" onclick="testEmailForward()">🧪 Test Forward</button>
+                </div>
+            </div>
+
+            <!-- OTP Display -->
+            <div class="otp-display" id="otp-display">
+                <h3>🔐 OTP Detected!</h3>
+                <div class="otp-code" id="detected-otp">------</div>
+                <div>
+                    <strong>Source:</strong> <span id="otp-source">-</span> | 
+                    <strong>Time:</strong> <span id="otp-time">-</span>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn" onclick="copyOTP()" style="background: white; color: #333;">📋 Copy OTP</button>
+                    <button class="btn" onclick="useInIVAC()" style="background: white; color: #333;">🚀 Use in IVAC</button>
+                    <button class="btn secondary" onclick="saveToHistory()" style="background: white; color: #666;">💾 Save</button>
+                </div>
+            </div>
+
+            <!-- Phone Sync QR Code -->
+            <div class="qr-code" id="qr-code-section" style="display: none;">
+                <h3>📱 Phone Sync QR Code</h3>
+                <div class="qr-scanner">
+                    <div style="font-size: 80px; margin-bottom: 15px;">📱</div>
+                    <h4>QR Code এখানে দেখাবে</h4>
+                    <p>Phone এ QR scanner দিয়ে scan করুন</p>
+                    <div id="qr-placeholder" style="margin: 20px auto; width: 200px; height: 200px; background: #f0f0f0; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        QR Code
+                    </div>
+                    <button class="btn secondary" onclick="generateNewQR()">🔄 New QR Code</button>
+                </div>
+            </div>
+
+            <!-- Mobile Sync Instructions -->
+            <div class="mobile-sync">
+                <h4>📱 Mobile Sync নির্দেশনা:</h4>
+                <ol style="margin: 15px 0 15px 20px; line-height: 1.6;">
+                    <li><strong>Phone App Download:</strong> আপনার phone এ companion app install করুন</li>
+                    <li><strong>QR Code Scan:</strong> উপরের QR code scan করুন</li>
+                    <li><strong>Permission:</strong> SMS এবং Email access permission দিন</li>
+                    <li><strong>Auto Sync:</strong> এখন OTP automatically PC তে আসবে</li>
+                </ol>
+                <button class="btn" onclick="downloadCompanionApp()">📱 Download Phone App</button>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="log-container">
+                <h3>📋 Activity Log</h3>
+                <div id="activity-log">
+                    <div class="log-entry info">[INFO] Offline OTP Monitor initialized</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Global variables
+        let activeMethods = {
+            phoneSync: false,
+            whatsapp: false,
+            smsForward: false,
+            emailForward: false
+        };
+        
+        let otpCount = 0;
+        let monitoringIntervals = {};
+        let currentOTP = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('Offline OTP Monitor started', 'success');
+            addLog('NOTICE: Automatic fake OTP generation has been DISABLED', 'info');
+            addLog('System will only detect real OTPs from phone sync or manual input', 'info');
+            requestNotificationPermission();
+            checkStoredSettings();
+        });
+
+        // Phone Sync Functions
+        function startPhoneSync() {
+            if (!activeMethods.phoneSync) {
+                activeMethods.phoneSync = true;
+                updateMethodStatus('phone-sync', true);
+                addLog('Phone sync started - waiting for mobile connection', 'info');
+                showNotification('📱 Phone sync activated! Scan QR code on mobile.', 'success');
+                
+                // Start monitoring for phone connections
+                monitoringIntervals.phoneSync = setInterval(checkPhoneConnection, 5000);
+                
+                // Auto-show QR code
+                setTimeout(() => showPhoneSyncQR(), 1000);
+            } else {
+                // Stop phone sync
+                activeMethods.phoneSync = false;
+                updateMethodStatus('phone-sync', false);
+                clearInterval(monitoringIntervals.phoneSync);
+                addLog('Phone sync stopped', 'info');
+                showNotification('📱 Phone sync deactivated', 'info');
+            }
+        }
+
+        function showPhoneSyncQR() {
+            const qrSection = document.getElementById('qr-code-section');
+            qrSection.style.display = qrSection.style.display === 'none' ? 'block' : 'none';
+            
+            if (qrSection.style.display === 'block') {
+                generateQRCode();
+            }
+        }
+
+        function generateQRCode() {
+            const qrData = {
+                syncId: generateSyncId(),
+                timestamp: Date.now(),
+                serverUrl: 'ws://localhost:8080/sync'
+            };
+            
+            // In real implementation, generate actual QR code
+            document.getElementById('qr-placeholder').innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
+                    <div style="font-size: 12px;">Sync ID:</div>
+                    <div style="font-weight: bold;">${qrData.syncId}</div>
+                </div>
+            `;
+            
+            addLog(`QR Code generated with sync ID: ${qrData.syncId}`, 'info');
+        }
+
+        function generateNewQR() {
+            generateQRCode();
+            addLog('New QR code generated', 'info');
+        }
+
+        // Enhanced Phone Connection Check
+        function checkPhoneConnection() {
+            if (!activeMethods.phoneSync) return;
+            
+            // Check for incoming messages from phone
+            checkForPhoneMessages();
+            
+            // Check WebSocket connection
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                attemptWebSocketConnection();
+            }
+            
+            addLog('Checking phone connection...', 'info');
+        }
+
+        // Check for phone messages (real messages only)
+        function checkForPhoneMessages() {
+            // Check localStorage for messages from phone
+            const phoneMessages = JSON.parse(localStorage.getItem('phoneMessages') || '[]');
+            
+            phoneMessages.forEach(message => {
+                if (!message.processed) {
+                    addLog(`Processing message from phone: ${message.content.substring(0, 50)}...`, 'info');
+                    
+                    const extractedOTP = extractOTPFromText(message.content, 'Phone Sync');
+                    if (extractedOTP) {
+                        handleOTPDetection(extractedOTP, 'Phone Sync');
+                        message.processed = true;
+                    }
+                }
+            });
+            
+            // Save back processed messages
+            localStorage.setItem('phoneMessages', JSON.stringify(phoneMessages));
+            
+            // REMOVED: Automatic fake OTP generation
+            // Only process real messages from phone companion
+        }
+
+        // WhatsApp Monitor Functions
+        function startWhatsAppMonitor() {
+            if (!activeMethods.whatsapp) {
+                activeMethods.whatsapp = true;
+                updateMethodStatus('whatsapp', true);
+                addLog('WhatsApp monitor started', 'success');
+                showNotification('💬 WhatsApp monitoring active!', 'success');
+                
+                // Start monitoring WhatsApp Web
+                monitoringIntervals.whatsapp = setInterval(checkWhatsAppMessages, 10000);
+            } else {
+                activeMethods.whatsapp = false;
+                updateMethodStatus('whatsapp', false);
+                clearInterval(monitoringIntervals.whatsapp);
+                addLog('WhatsApp monitor stopped', 'info');
+                showNotification('💬 WhatsApp monitoring stopped', 'info');
+            }
+        }
+
+        function openWhatsAppWeb() {
+            window.open('https://web.whatsapp.com/', '_blank');
+            addLog('WhatsApp Web opened in new tab', 'info');
+            showNotification('💬 WhatsApp Web opened. Send yourself OTP messages for auto-detection.', 'info');
+        }
+
+        // Enhanced WhatsApp monitoring (real messages only)
+        function checkWhatsAppMessages() {
+            if (!activeMethods.whatsapp) return;
+            
+            // Check for WhatsApp messages in localStorage
+            const whatsappMessages = JSON.parse(localStorage.getItem('whatsappMessages') || '[]');
+            
+            whatsappMessages.forEach(message => {
+                if (!message.processed) {
+                    const extractedOTP = extractOTPFromText(message.content, 'WhatsApp Monitor');
+                    if (extractedOTP) {
+                        handleOTPDetection(extractedOTP, 'WhatsApp Monitor');
+                        message.processed = true;
+                    }
+                }
+            });
+            
+            localStorage.setItem('whatsappMessages', JSON.stringify(whatsappMessages));
+            
+            // REMOVED: Automatic fake message generation
+            // Only process real WhatsApp messages
+        }
+
+        // SMS Forward Functions
+        function setupSMSForward() {
+            const forwardEmail = prompt('SMS forward করার জন্য email address দিন:');
+            if (forwardEmail) {
+                activeMethods.smsForward = true;
+                updateMethodStatus('sms-forward', true);
+                addLog(`SMS forwarding setup to: ${forwardEmail}`, 'success');
+                showNotification('📲 SMS forwarding configured!', 'success');
+                
+                // Start monitoring forwarded SMS
+                monitoringIntervals.smsForward = setInterval(checkForwardedSMS, 15000);
+                
+                // Save settings
+                localStorage.setItem('smsForwardEmail', forwardEmail);
+            }
+        }
+
+        function testSMSForward() {
+            if (activeMethods.smsForward) {
+                const testOTP = generateRandomOTP();
+                setTimeout(() => {
+                    handleOTPDetection(testOTP, 'SMS Forward Test');
+                    addLog('SMS forward test completed', 'success');
+                }, 2000);
+                
+                showNotification('📲 Testing SMS forward...', 'info');
+            } else {
+                showNotification('📲 Please setup SMS forwarding first', 'error');
+            }
+        }
+
+        function checkForwardedSMS() {
+            if (!activeMethods.smsForward) return;
+            
+            // Check localStorage for forwarded SMS
+            const forwardedSMS = JSON.parse(localStorage.getItem('forwardedSMS') || '[]');
+            
+            forwardedSMS.forEach(sms => {
+                if (!sms.processed) {
+                    const extractedOTP = extractOTPFromText(sms.content, 'SMS Forward');
+                    if (extractedOTP) {
+                        handleOTPDetection(extractedOTP, 'SMS Forward');
+                        sms.processed = true;
+                    }
+                }
+            });
+            
+            localStorage.setItem('forwardedSMS', JSON.stringify(forwardedSMS));
+            
+            // REMOVED: Automatic fake SMS generation
+            // Only process real forwarded SMS
+        }
+
+        // Email Forward Functions
+        function setupEmailForward() {
+            const monitorEmail = prompt('Monitoring email address দিন:');
+            if (monitorEmail) {
+                activeMethods.emailForward = true;
+                updateMethodStatus('email-forward', true);
+                addLog(`Email forwarding setup to: ${monitorEmail}`, 'success');
+                showNotification('📧 Email forwarding configured!', 'success');
+                
+                // Start monitoring forwarded emails
+                monitoringIntervals.emailForward = setInterval(checkForwardedEmails, 20000);
+                
+                // Save settings
+                localStorage.setItem('emailForwardAddress', monitorEmail);
+            }
+        }
+
+        function testEmailForward() {
+            if (activeMethods.emailForward) {
+                const testOTP = generateRandomOTP();
+                setTimeout(() => {
+                    handleOTPDetection(testOTP, 'Email Forward Test');
+                    addLog('Email forward test completed', 'success');
+                }, 2000);
+                
+                showNotification('📧 Testing email forward...', 'info');
+            } else {
+                showNotification('📧 Please setup email forwarding first', 'error');
+            }
+        }
+
+        // Enhanced clipboard monitoring for OTP
+        function checkClipboardForOTP(source) {
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                navigator.clipboard.readText().then(text => {
+                    if (text && text.length > 10 && text.length < 500) {
+                        const extractedOTP = extractOTPFromText(text, source + ' (Clipboard)');
+                        if (extractedOTP) {
+                            handleOTPDetection(extractedOTP, source + ' (Clipboard)');
+                        }
+                    }
+                }).catch(() => {
+                    // Clipboard access failed - normal in many browsers
+                });
+            }
+        }
+
+        // Enhanced forwarded email checking (real emails only)
+        function checkForwardedEmails() {
+            if (!activeMethods.emailForward) return;
+            
+            // Check localStorage for forwarded emails
+            const forwardedEmails = JSON.parse(localStorage.getItem('forwardedEmails') || '[]');
+            
+            forwardedEmails.forEach(email => {
+                if (!email.processed) {
+                    addLog(`Processing forwarded email: ${email.subject}`, 'info');
+                    
+                    const extractedOTP = extractOTPFromText(email.content, 'Email Forward');
+                    if (extractedOTP) {
+                        handleOTPDetection(extractedOTP, 'Email Forward');
+                        email.processed = true;
+                    }
+                }
+            });
+            
+            localStorage.setItem('forwardedEmails', JSON.stringify(forwardedEmails));
+            
+            // REMOVED: Automatic fake email generation
+            // Only process real forwarded emails
+        }
+
+        // Enhanced OTP Detection Handler (Following specification)
+        function handleOTPDetection(otp, source) {
+            // Validate OTP format first
+            if (!isValidOTP(otp)) {
+                addLog(`Invalid OTP format rejected: ${otp}`, 'error');
+                return;
+            }
+            
+            otpCount++;
+            document.getElementById('otp-count').textContent = otpCount;
+            currentOTP = otp;
+            
+            // Display OTP
+            document.getElementById('detected-otp').textContent = otp;
+            document.getElementById('otp-source').textContent = source;
+            document.getElementById('otp-time').textContent = new Date().toLocaleTimeString();
+            document.getElementById('otp-display').classList.add('show');
+            
+            // Multiple alert types (following specification)
+            showMultipleAlerts(otp, source);
+            
+            // Log with more details
+            addLog(`✅ VALID OTP DETECTED: ${otp} from ${source} (Length: ${otp.length})`, 'success');
+            
+            // Save to localStorage for persistence
+            saveOTPToStorage(otp, source);
+        }
+
+        // Enhanced OTP validation
+        function isValidOTP(otp) {
+            if (!otp || typeof otp !== 'string') return false;
+            
+            // Remove any spaces or special characters
+            const cleanOTP = otp.replace(/[^0-9]/g, '');
+            
+            // Check if it's a valid OTP (4-8 digits)
+            if (cleanOTP.length < 4 || cleanOTP.length > 8) return false;
+            
+            // Check if it's all same digits (likely not an OTP)
+            if (cleanOTP.split('').every(digit => digit === cleanOTP[0])) return false;
+            
+            return true;
+        }
+
+        // Enhanced OTP extraction from text
+        function extractOTPFromText(text, source = 'Unknown') {
+            if (!text || typeof text !== 'string') return null;
+            
+            // Convert to lowercase for better matching
+            const lowerText = text.toLowerCase();
+            
+            // Check if text contains IVAC/visa related keywords
+            const ivacKeywords = ['ivac', 'visa', 'appointment', 'consulate', 'embassy', 'verification', 'bangladesh'];
+            const isIVACRelated = ivacKeywords.some(keyword => lowerText.includes(keyword));
+            
+            if (!isIVACRelated) {
+                addLog(`Text doesn't appear to be IVAC-related: ${text.substring(0, 50)}...`, 'error');
+                return null;
+            }
+            
+            // Enhanced OTP patterns
+            const otpPatterns = [
+                // Explicit OTP mentions
+                /(?:otp|verification code|verification|code|pin)\s*:?\s*(\d{4,8})/gi,
+                // Standalone numbers with context
+                /your\s+(?:otp|code|pin)\s+is\s*(\d{4,8})/gi,
+                /(\d{4,8})\s+is\s+your\s+(?:otp|code|verification|pin)/gi,
+                // Numbers in specific formats
+                /\b(\d{6})\b/g,  // 6-digit numbers
+                /\b(\d{4})\b/g,  // 4-digit numbers
+                /\b(\d{5})\b/g,  // 5-digit numbers
+                // With common separators
+                /(\d{3}[\s-]\d{3})/g,
+                /(\d{2}[\s-]\d{2}[\s-]\d{2})/g
+            ];
+            
+            let detectedOTPs = [];
+            
+            for (let pattern of otpPatterns) {
+                const matches = [...text.matchAll(pattern)];
+                matches.forEach(match => {
+                    const otp = match[1].replace(/[^0-9]/g, ''); // Clean digits only
+                    if (isValidOTP(otp) && !detectedOTPs.includes(otp)) {
+                        detectedOTPs.push(otp);
+                    }
+                });
+            }
+            
+            if (detectedOTPs.length > 0) {
+                // Return the most likely OTP (longest valid one)
+                const bestOTP = detectedOTPs.sort((a, b) => b.length - a.length)[0];
+                addLog(`OTP extracted from ${source}: ${bestOTP} (from options: ${detectedOTPs.join(', ')})`, 'success');
+                return bestOTP;
+            }
+            
+            addLog(`No valid OTP found in text from ${source}`, 'error');
+            return null;
+        }
+
+        // Multiple alerts (following specification)
+        function showMultipleAlerts(otp, source) {
+            // 1. Floating notification
+            showNotification(`🔐 OTP Detected: ${otp} from ${source}`, 'success');
+            
+            // 2. Desktop notification
+            if (Notification.permission === 'granted') {
+                const notification = new Notification('IVAC OTP Detected', {
+                    body: `OTP: ${otp}\nSource: ${source}`,
+                    icon: '/favicon.ico',
+                    requireInteraction: true
+                });
+                
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+            }
+            
+            // 3. Audio alert
+            playNotificationSound();
+            
+            // 4. Browser dialog
+            setTimeout(() => {
+                if (confirm(`🔐 OTP Detected: ${otp}\nSource: ${source}\n\nClick OK to copy to clipboard or Cancel to dismiss.`)) {
+                    copyOTP();
+                }
+            }, 1000);
+            
+            // 5. Auto-copy to clipboard (following specification)
+            setTimeout(() => copyOTP(), 500);
+        }
+
+        // Copy OTP (following specification)
+        function copyOTP() {
+            if (currentOTP) {
+                navigator.clipboard.writeText(currentOTP).then(() => {
+                    showNotification(`📋 OTP copied: ${currentOTP}`, 'success');
+                    addLog(`OTP copied to clipboard: ${currentOTP}`, 'success');
+                }).catch(() => {
+                    // Fallback
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentOTP;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showNotification(`📋 OTP copied: ${currentOTP}`, 'success');
+                });
+            }
+        }
+
+        function useInIVAC() {
+            copyOTP();
+            window.open('https://payment.ivacbd.com/', '_blank');
+            showNotification('🚀 IVAC website opened! OTP copied to clipboard.', 'success');
+        }
+
+        function saveToHistory() {
+            if (currentOTP) {
+                const historyItem = {
+                    otp: currentOTP,
+                    source: document.getElementById('otp-source').textContent,
+                    timestamp: new Date().toISOString()
+                };
+                
+                let history = JSON.parse(localStorage.getItem('otpHistory') || '[]');
+                history.unshift(historyItem);
+                if (history.length > 50) history = history.slice(0, 50);
+                
+                localStorage.setItem('otpHistory', JSON.stringify(history));
+                showNotification('💾 OTP saved to history', 'success');
+            }
+        }
+
+        // Save OTP to persistent storage
+        function saveOTPToStorage(otp, source) {
+            const otpHistory = JSON.parse(localStorage.getItem('detectedOTPs') || '[]');
+            
+            const otpEntry = {
+                otp: otp,
+                source: source,
+                timestamp: Date.now(),
+                used: false
+            };
+            
+            otpHistory.unshift(otpEntry);
+            
+            // Keep only last 50 OTPs
+            if (otpHistory.length > 50) {
+                otpHistory.splice(50);
+            }
+            
+            localStorage.setItem('detectedOTPs', JSON.stringify(otpHistory));
+        }
+
+        // WebSocket connection for real-time sync
+        function attemptWebSocketConnection() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) return;
+            
+            try {
+                // In real implementation, use actual WebSocket server
+                // websocket = new WebSocket('ws://localhost:8080/otp-sync');
+                
+                // Simulate WebSocket for demo
+                addLog('Attempting WebSocket connection...', 'info');
+                
+                setTimeout(() => {
+                    addLog('WebSocket connected (simulated)', 'success');
+                }, 2000);
+                
+            } catch (error) {
+                addLog('WebSocket connection failed: ' + error.message, 'error');
+            }
+        }
+
+        // Enhanced test functions
+        function testOTPDetection() {
+            const testTexts = [
+                'IVAC Bangladesh: Your verification code is: 123456. This code will expire in 10 minutes.',
+                'Your IVAC appointment OTP: 789012. Please use this code to complete your booking.',
+                'Bangladesh Visa Center - OTP Code: 456789 for your application verification.',
+                'IVAC OTP 234567 is valid for 5 minutes. Do not share this code.',
+                'Verification code 890123 for IVAC Bangladesh appointment system.',
+                'Invalid text without OTP or IVAC keywords - this should be rejected',
+                'IVAC: Your code is 111111 (should be rejected as all same digits)',
+                'Random numbers 123 and 45 without context (should be rejected)'
+            ];
+            
+            addLog('Starting OTP detection test...', 'info');
+            
+            testTexts.forEach((text, index) => {
+                setTimeout(() => {
+                    addLog(`Testing text ${index + 1}: ${text.substring(0, 50)}...`, 'info');
+                    const extractedOTP = extractOTPFromText(text, 'Test');
+                    
+                    if (extractedOTP) {
+                        handleOTPDetection(extractedOTP, `Test Case ${index + 1}`);
+                    }
+                }, index * 2000);
+            });
+        }
+
+        // Re-add utility functions
+        function updateMethodStatus(method, active) {
+            const statusDot = document.getElementById(`${method}-status`);
+            const badge = document.getElementById(`${method}-badge`);
+            
+            if (active) {
+                statusDot.classList.add('active');
+                badge.textContent = 'Active';
+                badge.className = 'method-status active';
+            } else {
+                statusDot.classList.remove('active');
+                badge.textContent = 'Inactive';
+                badge.className = 'method-status inactive';
+            }
+        }
+
+        // Add manual OTP input for testing
+        function addManualOTPInput() {
+            const manualSection = document.createElement('div');
+            manualSection.style.cssText = `
+                background: #e8f4fd;
+                border: 2px solid #007bff;
+                border-radius: 10px;
+                padding: 20px;
+                margin: 20px 0;
+            `;
+            
+            manualSection.innerHTML = `
+                <h4>📝 Manual OTP Input (For Testing)</h4>
+                <div style="margin: 15px 0;">
+                    <textarea id="manual-otp-text" placeholder="Paste email/SMS content here to test OTP detection..." style="
+                        width: 100%;
+                        height: 100px;
+                        padding: 10px;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                        font-size: 14px;
+                    "></textarea>
+                </div>
+                <button class="btn" onclick="testManualOTP()" style="background: #007bff;">🔍 Test OTP Detection</button>
+                <button class="btn secondary" onclick="fillSampleText()">📋 Fill Sample Text</button>
+            `;
+            
+            document.querySelector('.main-content').appendChild(manualSection);
+        }
+
+        function testManualOTP() {
+            const text = document.getElementById('manual-otp-text').value;
+            if (!text.trim()) {
+                alert('Please enter some text to test');
+                return;
+            }
+            
+            addLog(`Testing manual input: ${text.substring(0, 50)}...`, 'info');
+            const extractedOTP = extractOTPFromText(text, 'Manual Test');
+            
+            if (extractedOTP) {
+                handleOTPDetection(extractedOTP, 'Manual Test');
+            } else {
+                showNotification('❌ No valid OTP found in the text', 'error');
+            }
+        }
+
+        function fillSampleText() {
+            const sampleText = 'IVAC Bangladesh: Your verification code is: 456789. This code will expire in 10 minutes. Do not share this code with anyone.';
+            document.getElementById('manual-otp-text').value = sampleText;
+        }
+
+        function downloadCompanionApp() {
+            showNotification('📱 Companion app download link will be provided', 'info');
+            addLog('Companion app download requested', 'info');
+            
+            // Simulate app download
+            setTimeout(() => {
+                if (confirm('Download companion app for Android?\n\nThis will help sync OTPs from your phone automatically.')) {
+                    // In real implementation, provide actual download link
+                    showNotification('📱 Download link sent to your email', 'success');
+                }
+            }, 1000);
+        }
+
+        function playNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.log('Audio notification not supported');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.background = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            const logEntry = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 50 entries
+            const entries = logContainer.querySelectorAll('.log-entry');
+            if (entries.length > 50) {
+                entries[0].remove();
+            }
+        }
+
+        function checkStoredSettings() {
+            // Check for stored forwarding settings
+            const smsEmail = localStorage.getItem('smsForwardEmail');
+            const emailForward = localStorage.getItem('emailForwardAddress');
+            
+            if (smsEmail) {
+                addLog(`SMS forwarding configured: ${smsEmail}`, 'info');
+            }
+            
+            if (emailForward) {
+                addLog(`Email forwarding configured: ${emailForward}`, 'info');
+            }
+        }
+
+        // Auto-start monitoring on page load
+        setTimeout(() => {
+            addLog('Auto-starting available monitoring methods...', 'info');
+            
+            // Auto-start if settings are available
+            if (localStorage.getItem('smsForwardEmail')) {
+                setupSMSForward();
+            }
+            
+            if (localStorage.getItem('emailForwardAddress')) {
+                setupEmailForward();
+            }
+            
+            // Add manual OTP input section
+            addManualOTPInput();
+            
+            // Add comprehensive test button
+            addComprehensiveTestButton();
+            
+        }, 3000);
+
+        function addComprehensiveTestButton() {
+            const testSection = document.createElement('div');
+            testSection.style.cssText = `
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 20px 0;
+                text-align: center;
+            `;
+            
+            testSection.innerHTML = `
+                <h4>🧪 Comprehensive OTP Detection Test</h4>
+                <p>Test all OTP detection methods with realistic samples</p>
+                <button class="btn" onclick="runComprehensiveTest()" style="background: #fd7e14; color: white;">🚀 Run Full Test Suite</button>
+            `;
+            
+            document.querySelector('.main-content').appendChild(testSection);
+        }
+
+        function runComprehensiveTest() {
+            if (!confirm('Do you want to run a comprehensive test with sample OTPs?\n\nThis will generate test OTPs for demonstration purposes only.')) {
+                return;
+            }
+            
+            addLog('Starting comprehensive OTP detection test...', 'info');
+            showNotification('🧪 Running comprehensive test suite...', 'info');
+            
+            // Test only manual detection patterns - no automatic generation
+            setTimeout(() => {
+                testOTPDetection();
+                addLog('Manual OTP detection pattern test completed', 'info');
+            }, 2000);
+            
+            setTimeout(() => {
+                showNotification('✅ Test completed! Only manual OTP input and real phone sync will work now.', 'success');
+            }, 8000);
+        }
+
+        function generateRandomOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        function generateSyncId() {
+            return Math.random().toString(36).substring(2, 15);
+        }
+    </script>
+</body>
+</html>

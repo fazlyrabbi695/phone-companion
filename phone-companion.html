@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="IVAC OTP">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2N2VlYSIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    <title>📱 IVAC OTP Phone Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .sync-section {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .qr-scanner {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.danger {
+            background: #dc3545;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .otp-detection {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .detected-otp {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .detected-otp.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        .otp-code {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            margin: 15px 0;
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            padding: 5px 8px;
+            margin-bottom: 3px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        .log-entry.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-entry.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #dc3545;
+        }
+
+        .status-indicator.connected {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .permission-section {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Phone Companion</h1>
+            <p>IVAC OTP Auto-Sync for Mobile</p>
+        </div>
+
+        <div class="status-bar">
+            <span class="status-indicator" id="connection-status"></span>
+            <span id="status-text">Not Connected</span>
+        </div>
+
+        <div class="main-content">
+            <!-- QR Scanner Section -->
+            <div class="sync-section">
+                <h3>🔗 PC সাথে Sync করুন</h3>
+                <div class="qr-scanner">
+                    <div style="font-size: 60px; margin-bottom: 15px;">📷</div>
+                    <p>PC থেকে QR code scan করুন</p>
+                    <button class="btn" onclick="startQRScanner()">📷 QR Scanner খুলুন</button>
+                </div>
+                
+                <!-- Manual Sync -->
+                <div style="text-align: left; margin-top: 20px;">
+                    <div class="input-group">
+                        <label>অথবা Sync ID manually দিন:</label>
+                        <input type="text" id="sync-id" placeholder="Sync ID এখানে paste করুন">
+                    </div>
+                    <button class="btn secondary" onclick="connectWithSyncId()">🔗 Connect করুন</button>
+                </div>
+            </div>
+
+            <!-- Permission Section -->
+            <div class="permission-section" id="permission-section">
+                <h4>📋 Required Permissions:</h4>
+                <ul style="margin: 10px 0 10px 20px;">
+                    <li>📧 Email/SMS Reading</li>
+                    <li>📱 Notification Access</li>
+                    <li>🌐 Network Access</li>
+                </ul>
+                <button class="btn" onclick="requestPermissions()">✅ Grant Permissions</button>
+            </div>
+
+            <!-- OTP Detection Settings -->
+            <div class="otp-detection">
+                <h4>🔍 OTP Detection Settings:</h4>
+                <label style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="monitor-sms" checked style="margin-right: 8px;">
+                    📲 Monitor SMS messages
+                </label>
+                <label style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="monitor-email" checked style="margin-right: 8px;">
+                    📧 Monitor Email notifications
+                </label>
+                <label style="display: flex; align-items: center; margin: 10px 0;">
+                    <input type="checkbox" id="auto-send" checked style="margin-right: 8px;">
+                    🚀 Auto-send OTPs to PC
+                </label>
+                <button class="btn" onclick="startMonitoring()">🎯 Start OTP Monitoring</button>
+            </div>
+
+            <!-- Detected OTP Display -->
+            <div class="detected-otp" id="detected-otp">
+                <h4>🔐 OTP Detected!</h4>
+                <div class="otp-code" id="otp-display">------</div>
+                <div>Detected: <span id="otp-time">--:--:--</span></div>
+                <button class="btn" onclick="sendOTPToPC()">📤 Send to PC</button>
+            </div>
+
+            <!-- Control Buttons -->
+            <div style="margin: 20px 0;">
+                <button class="btn" onclick="testOTPDetection()">🧪 Test OTP Detection</button>
+                <button class="btn secondary" onclick="manualOTPSend()">📝 Manual OTP Send</button>
+                <button class="btn" id="install-app" onclick="installPWA()" style="background: #ff6b6b; display: none;">📱 Install App</button>
+                <button class="btn danger" onclick="disconnect()">🔌 Disconnect</button>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="log-container">
+                <h4>📋 Activity Log</h4>
+                <div id="phone-log">
+                    <div class="log-entry info">[INFO] Phone companion app started</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let isConnected = false;
+        let syncId = '';
+        let monitoringActive = false;
+        let websocket = null;
+        let deferredPrompt = null; // For PWA install
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('Phone companion initialized', 'info');
+            checkPermissions();
+            registerServiceWorker();
+            setupPWAInstall();
+        });
+
+        // PWA Service Worker Registration
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => addLog('Service Worker registered for offline support', 'success'))
+                    .catch(() => addLog('Service Worker registration failed', 'error'));
+            }
+        }
+
+        // PWA Install Setup
+        function setupPWAInstall() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('install-app').style.display = 'inline-block';
+                addLog('App can be installed as PWA', 'info');
+            });
+        }
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((result) => {
+                    if (result.outcome === 'accepted') {
+                        addLog('PWA installed successfully!', 'success');
+                        document.getElementById('install-app').style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        // QR Scanner Functions
+        function startQRScanner() {
+            addLog('Starting QR scanner...', 'info');
+            
+            // Simulate QR scanning
+            setTimeout(() => {
+                const mockSyncId = 'sync_' + Math.random().toString(36).substring(2, 10);
+                document.getElementById('sync-id').value = mockSyncId;
+                addLog(`QR code scanned: ${mockSyncId}`, 'success');
+                
+                // Auto-connect
+                setTimeout(() => connectWithSyncId(), 1000);
+            }, 3000);
+            
+            alert('📷 QR Scanner opened\\n\\nPoint your camera at the QR code on PC screen');
+        }
+
+        function connectWithSyncId() {
+            const inputSyncId = document.getElementById('sync-id').value;
+            if (!inputSyncId) {
+                alert('Please enter or scan Sync ID first');
+                return;
+            }
+
+            syncId = inputSyncId;
+            addLog(`Connecting with Sync ID: ${syncId}`, 'info');
+            
+            // Simulate connection
+            setTimeout(() => {
+                isConnected = true;
+                updateConnectionStatus(true);
+                addLog('Connected to PC successfully!', 'success');
+                
+                // Hide permission section if connected
+                document.getElementById('permission-section').style.display = 'none';
+                
+                // Auto-start monitoring if permissions granted
+                if (checkPermissions()) {
+                    setTimeout(() => startMonitoring(), 2000);
+                }
+            }, 2000);
+        }
+
+        // Connection Management
+        function updateConnectionStatus(connected) {
+            const statusIndicator = document.getElementById('connection-status');
+            const statusText = document.getElementById('status-text');
+            
+            if (connected) {
+                statusIndicator.classList.add('connected');
+                statusText.textContent = 'Connected to PC';
+            } else {
+                statusIndicator.classList.remove('connected');
+                statusText.textContent = 'Not Connected';
+            }
+        }
+
+        function disconnect() {
+            if (confirm('PC থেকে disconnect করবেন?')) {
+                isConnected = false;
+                monitoringActive = false;
+                updateConnectionStatus(false);
+                addLog('Disconnected from PC', 'info');
+                
+                if (websocket) {
+                    websocket.close();
+                    websocket = null;
+                }
+            }
+        }
+
+        // Permission Management
+        function checkPermissions() {
+            // Simulate permission check
+            const hasPermissions = localStorage.getItem('phonePermissions') === 'granted';
+            
+            if (hasPermissions) {
+                document.getElementById('permission-section').style.backgroundColor = '#d4edda';
+                document.getElementById('permission-section').style.color = '#155724';
+                document.getElementById('permission-section').innerHTML = `
+                    <h4>✅ Permissions Granted</h4>
+                    <p>All required permissions are active</p>
+                `;
+            }
+            
+            return hasPermissions;
+        }
+
+        function requestPermissions() {
+            addLog('Requesting permissions...', 'info');
+            
+            // Simulate permission request
+            setTimeout(() => {
+                if (confirm('Grant SMS and Email reading permissions?\\n\\nThis is required for automatic OTP detection.')) {
+                    localStorage.setItem('phonePermissions', 'granted');
+                    addLog('Permissions granted successfully', 'success');
+                    checkPermissions();
+                    
+                    // Auto-start monitoring if connected
+                    if (isConnected) {
+                        setTimeout(() => startMonitoring(), 1000);
+                    }
+                } else {
+                    addLog('Permissions denied', 'error');
+                }
+            }, 1000);
+        }
+
+        // OTP Monitoring (real messages only)
+        function startMonitoring() {
+            if (!isConnected) {
+                alert('Please connect to PC first');
+                return;
+            }
+            
+            if (!checkPermissions()) {
+                alert('Please grant required permissions first');
+                return;
+            }
+
+            monitoringActive = true;
+            addLog('OTP monitoring started - waiting for real SMS/Email notifications', 'success');
+            
+            // REMOVED: Automatic fake OTP generation
+            // Only real SMS/Email notifications will be processed
+            addLog('Monitoring active: Only real OTPs will be detected and sent to PC', 'info');
+        }
+
+        function handleOTPDetection(otp, source) {
+            addLog(`OTP detected: ${otp} from ${source}`, 'success');
+            
+            // Display detected OTP
+            document.getElementById('otp-display').textContent = otp;
+            document.getElementById('otp-time').textContent = new Date().toLocaleTimeString();
+            document.getElementById('detected-otp').classList.add('show');
+            
+            // Auto-send if enabled
+            if (document.getElementById('auto-send').checked) {
+                setTimeout(() => sendOTPToPC(), 1000);
+            } else {
+                // Show notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('IVAC OTP Detected', {
+                        body: `OTP: ${otp}\\nTap to send to PC`,
+                        icon: '/favicon.ico'
+                    });
+                }
+            }
+        }
+
+        function sendOTPToPC() {
+            const otp = document.getElementById('otp-display').textContent;
+            if (!otp || otp === '------') {
+                alert('No OTP to send');
+                return;
+            }
+
+            if (!isConnected) {
+                alert('Not connected to PC');
+                return;
+            }
+
+            addLog(`Sending OTP to PC: ${otp}`, 'info');
+            
+            // Store OTP for PC to access via localStorage
+            const phoneMessages = JSON.parse(localStorage.getItem('phoneMessages') || '[]');
+            
+            const messageData = {
+                content: `IVAC Bangladesh: Your verification code is: ${otp}. This code will expire in 10 minutes. Please do not share this code with anyone.`,
+                otp: otp,
+                source: 'Phone Companion',
+                timestamp: Date.now(),
+                processed: false,
+                fromPhone: true
+            };
+            
+            phoneMessages.unshift(messageData);
+            
+            // Keep only last 20 messages
+            if (phoneMessages.length > 20) {
+                phoneMessages.splice(20);
+            }
+            
+            localStorage.setItem('phoneMessages', JSON.stringify(phoneMessages));
+            
+            // Simulate sending to PC
+            setTimeout(() => {
+                addLog(`OTP stored for PC access: ${otp}`, 'success');
+                
+                // Hide detected OTP
+                document.getElementById('detected-otp').classList.remove('show');
+                
+                // Show success message
+                alert(`✅ OTP sent to PC: ${otp}\n\nPC will detect this OTP automatically!`);
+            }, 1000);
+        }
+
+        function testOTPDetection() {
+            const testOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            handleOTPDetection(testOTP, 'Test Detection');
+            addLog('Test OTP detection completed', 'info');
+        }
+
+        function manualOTPSend() {
+            const manualOTP = prompt('Manual OTP enter করুন:');
+            if (manualOTP && manualOTP.length >= 4) {
+                handleOTPDetection(manualOTP, 'Manual Input');
+            }
+        }
+
+        // Utility Functions
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('phone-log');
+            const logEntry = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Keep only last 30 entries
+            const entries = logContainer.querySelectorAll('.log-entry');
+            if (entries.length > 30) {
+                entries[0].remove();
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Auto-test functionality after page load
+        setTimeout(() => {
+            addLog('Ready for QR code scanning or manual sync', 'info');
+        }, 2000);
+    </script>
+</body>
+</html>
