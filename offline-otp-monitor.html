@@ -457,6 +457,7 @@
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
+    <script src="sync-service.js"></script>
     <script>
         // Global variables
         let activeMethods = {
@@ -469,6 +470,8 @@
         let otpCount = 0;
         let monitoringIntervals = {};
         let currentOTP = '';
+        let syncService;
+        let syncPollingInterval;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -477,7 +480,83 @@
             addLog('System will only detect real OTPs from phone sync or manual input', 'info');
             requestNotificationPermission();
             checkStoredSettings();
+            initializeSyncService();
         });
+
+        // Initialize sync service for cross-device communication
+        async function initializeSyncService() {
+            try {
+                syncService = new OTPSyncService();
+                await syncService.initialize();
+                addLog('✅ Sync service initialized - ready for cross-device OTP sync', 'success');
+                
+                // Start polling for synced OTPs
+                startSyncPolling();
+                
+            } catch (error) {
+                addLog('❌ Sync service initialization failed: ' + error.message, 'error');
+                console.error('Sync service error:', error);
+            }
+        }
+
+        // Start polling for OTPs from sync service
+        function startSyncPolling() {
+            if (syncPollingInterval) {
+                clearInterval(syncPollingInterval);
+            }
+            
+            syncPollingInterval = setInterval(async () => {
+                try {
+                    const syncedOTPs = await syncService.receiveOTP();
+                    if (syncedOTPs && syncedOTPs.length > 0) {
+                        syncedOTPs.forEach(otpData => {
+                            if (otpData && otpData.otp && isValidOTPData(otpData)) {
+                                handleSyncedOTP(otpData);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error receiving synced OTP:', error);
+                }
+            }, 3000); // Check every 3 seconds
+            
+            addLog('🔄 Started polling for synced OTPs every 3 seconds', 'info');
+        }
+
+        // Validate synced OTP data
+        function isValidOTPData(otpData) {
+            const now = Date.now();
+            const maxAge = 5 * 60 * 1000; // 5 minutes
+            
+            if (!otpData.otp || !otpData.timestamp) return false;
+            if (now - otpData.timestamp > maxAge) {
+                addLog('⏰ Received OTP is too old, ignoring', 'error');
+                return false;
+            }
+            
+            return isValidOTP(otpData.otp);
+        }
+
+        // Handle OTP received from sync service
+        function handleSyncedOTP(otpData) {
+            // Check if we already processed this OTP
+            const stored = localStorage.getItem('detectedOTPs') || '[]';
+            const existingOTPs = JSON.parse(stored);
+            
+            const alreadyExists = existingOTPs.some(existing => 
+                existing.otp === otpData.otp && 
+                Math.abs(existing.timestamp - otpData.timestamp) < 10000 // Within 10 seconds
+            );
+            
+            if (alreadyExists) {
+                addLog('📋 OTP already processed, skipping duplicate', 'info');
+                return;
+            }
+            
+            // Process the synced OTP
+            addLog(`📱 Received OTP from sync: ${otpData.otp} (Source: ${otpData.source || 'Phone'})`, 'success');
+            handleOTPDetection(otpData.otp, otpData.source || 'Phone Sync');
+        }
 
         // Phone Sync Functions
         function startPhoneSync() {
@@ -515,19 +594,29 @@
             const qrData = {
                 syncId: generateSyncId(),
                 timestamp: Date.now(),
-                serverUrl: 'ws://localhost:8080/sync'
+                serverUrl: window.location.origin,
+                method: 'github-pages'
             };
             
-            // In real implementation, generate actual QR code
+            // Store sync ID for later use
+            localStorage.setItem('currentSyncId', qrData.syncId);
+            
+            // Display QR data for manual entry on phone
             document.getElementById('qr-placeholder').innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">📱</div>
-                    <div style="font-size: 12px;">Sync ID:</div>
-                    <div style="font-weight: bold;">${qrData.syncId}</div>
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 32px; margin-bottom: 15px;">📱</div>
+                    <div style="font-size: 14px; margin-bottom: 10px; color: #666;">Sync Details:</div>
+                    <div style="font-weight: bold; margin-bottom: 10px;">ID: ${qrData.syncId}</div>
+                    <div style="font-size: 12px; word-break: break-all; margin-bottom: 10px;">URL: ${qrData.serverUrl}</div>
+                    <div style="font-size: 11px; color: #888;">Method: Real-time Sync</div>
+                    <div style="margin-top: 15px; padding: 10px; background: #e8f5e8; border-radius: 5px; font-size: 11px;">
+                        ✅ Use this info in phone companion app
+                    </div>
                 </div>
             `;
             
             addLog(`QR Code generated with sync ID: ${qrData.syncId}`, 'info');
+            addLog(`Sync URL: ${qrData.serverUrl}`, 'info');
         }
 
         function generateNewQR() {
@@ -539,39 +628,19 @@
         function checkPhoneConnection() {
             if (!activeMethods.phoneSync) return;
             
-            // Check for incoming messages from phone
-            checkForPhoneMessages();
-            
-            // Check WebSocket connection
-            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
-                attemptWebSocketConnection();
+            // The sync service handles cross-device communication now
+            if (syncService) {
+                addLog('📱 Phone connection active via sync service', 'info');
+            } else {
+                addLog('❌ Phone connection requires sync service', 'error');
             }
-            
-            addLog('Checking phone connection...', 'info');
         }
 
-        // Check for phone messages (real messages only)
+        // Check for phone messages (legacy - now handled by sync service)
         function checkForPhoneMessages() {
-            // Check localStorage for messages from phone
-            const phoneMessages = JSON.parse(localStorage.getItem('phoneMessages') || '[]');
-            
-            phoneMessages.forEach(message => {
-                if (!message.processed) {
-                    addLog(`Processing message from phone: ${message.content.substring(0, 50)}...`, 'info');
-                    
-                    const extractedOTP = extractOTPFromText(message.content, 'Phone Sync');
-                    if (extractedOTP) {
-                        handleOTPDetection(extractedOTP, 'Phone Sync');
-                        message.processed = true;
-                    }
-                }
-            });
-            
-            // Save back processed messages
-            localStorage.setItem('phoneMessages', JSON.stringify(phoneMessages));
-            
-            // REMOVED: Automatic fake OTP generation
-            // Only process real messages from phone companion
+            // This function is now handled by the sync service
+            // Left for compatibility but functionality moved to handleSyncedOTP
+            addLog('Phone message checking now handled by sync service', 'info');
         }
 
         // WhatsApp Monitor Functions
@@ -942,24 +1011,9 @@
             localStorage.setItem('detectedOTPs', JSON.stringify(otpHistory));
         }
 
-        // WebSocket connection for real-time sync
+        // Sync service handles connection - WebSocket code removed
         function attemptWebSocketConnection() {
-            if (websocket && websocket.readyState === WebSocket.OPEN) return;
-            
-            try {
-                // In real implementation, use actual WebSocket server
-                // websocket = new WebSocket('ws://localhost:8080/otp-sync');
-                
-                // Simulate WebSocket for demo
-                addLog('Attempting WebSocket connection...', 'info');
-                
-                setTimeout(() => {
-                    addLog('WebSocket connected (simulated)', 'success');
-                }, 2000);
-                
-            } catch (error) {
-                addLog('WebSocket connection failed: ' + error.message, 'error');
-            }
+            addLog('Connection now handled by sync service with multiple fallback methods', 'info');
         }
 
         // Enhanced test functions

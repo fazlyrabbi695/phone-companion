@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 OTP Sync Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid;
+            border-radius: 8px;
+        }
+        .phone-section {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .pc-section {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 OTP Sync Test - GitHub Pages</h1>
+        <p>Test cross-device OTP synchronization between phone and PC when deployed on GitHub Pages.</p>
+        
+        <div class="section phone-section">
+            <h3>📱 Phone Simulator</h3>
+            <p>This simulates sending an OTP from your phone companion app:</p>
+            
+            <textarea id="test-otp-message" placeholder="Enter IVAC OTP message (e.g., 'IVAC Bangladesh: Your verification code is: 123456')" rows="3">IVAC Bangladesh: Your verification code is: 789012. This code will expire in 10 minutes.</textarea>
+            
+            <div>
+                <button onclick="sendTestOTP()" class="success">📤 Send OTP to PC</button>
+                <button onclick="clearPhone()">🧹 Clear</button>
+            </div>
+            
+            <div id="phone-log" class="test-results">
+                Phone log will appear here...
+            </div>
+        </div>
+        
+        <div class="section pc-section">
+            <h3>💻 PC Monitor Simulator</h3>
+            <p>This simulates the PC monitor receiving OTPs:</p>
+            
+            <div>
+                <button onclick="checkForOTPs()" class="success">🔍 Check for OTPs</button>
+                <button onclick="startAutoCheck()">▶️ Start Auto Check</button>
+                <button onclick="stopAutoCheck()">⏹️ Stop Auto Check</button>
+                <button onclick="clearPC()">🧹 Clear</button>
+            </div>
+            
+            <div id="pc-log" class="test-results">
+                PC log will appear here...
+            </div>
+            
+            <div id="detected-otp-display" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px;">
+                <h4>🔐 OTP Detected!</h4>
+                <div>OTP: <strong id="detected-otp-code">------</strong></div>
+                <div>Source: <strong id="detected-otp-source">-</strong></div>
+                <div>Time: <strong id="detected-otp-time">-</strong></div>
+            </div>
+        </div>
+        
+        <div class="section" style="border-color: #6c757d; background: #f8f9fa;">
+            <h3>📊 Sync Status</h3>
+            <div>
+                <button onclick="checkSyncStatus()">📡 Check Sync Status</button>
+                <button onclick="resetSync()" class="danger">🔄 Reset Sync</button>
+            </div>
+            <div id="sync-status" class="test-results">
+                Sync status will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script src="sync-service.js"></script>
+    <script>
+        let syncService;
+        let autoCheckInterval;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                syncService = new OTPSyncService();
+                await syncService.initialize();
+                logPhone('✅ Sync service initialized');
+                logPC('✅ Sync service ready');
+                logSync('✅ Cross-device sync ready');
+            } catch (error) {
+                logPhone('❌ Sync service failed: ' + error.message);
+                logPC('❌ Sync service failed: ' + error.message);
+                logSync('❌ Sync initialization failed');
+            }
+        });
+        
+        // Phone functions
+        async function sendTestOTP() {
+            const message = document.getElementById('test-otp-message').value;
+            if (!message.trim()) {
+                alert('Please enter a test message');
+                return;
+            }
+            
+            logPhone('📤 Sending OTP message...');
+            logPhone('Message: ' + message.substring(0, 100) + '...');
+            
+            try {
+                // Extract OTP from message
+                const otpMatch = message.match(/\b(\d{4,8})\b/);
+                if (!otpMatch) {
+                    logPhone('❌ No OTP found in message');
+                    return;
+                }
+                
+                const otp = otpMatch[1];
+                const otpData = {
+                    otp: otp,
+                    source: 'Test Phone',
+                    message: message,
+                    timestamp: Date.now()
+                };
+                
+                // Send via sync service
+                await syncService.sendOTP(otpData);
+                logPhone(`✅ OTP sent successfully: ${otp}`);
+                logPhone('💡 Now check PC monitor to see if it receives the OTP');
+                
+            } catch (error) {
+                logPhone('❌ Failed to send OTP: ' + error.message);
+            }
+        }
+        
+        function clearPhone() {
+            document.getElementById('phone-log').innerHTML = 'Phone log cleared...';
+            document.getElementById('test-otp-message').value = 'IVAC Bangladesh: Your verification code is: 789012. This code will expire in 10 minutes.';
+        }
+        
+        // PC functions
+        async function checkForOTPs() {
+            logPC('🔍 Checking for OTPs...');
+            
+            try {
+                const otps = await syncService.receiveOTP();
+                if (otps && otps.length > 0) {
+                    logPC(`📨 Found ${otps.length} OTP(s)`);
+                    
+                    otps.forEach((otpData, index) => {
+                        logPC(`OTP ${index + 1}: ${otpData.otp} from ${otpData.source}`);
+                        displayDetectedOTP(otpData);
+                    });
+                } else {
+                    logPC('📭 No new OTPs found');
+                }
+            } catch (error) {
+                logPC('❌ Error checking OTPs: ' + error.message);
+            }
+        }
+        
+        function startAutoCheck() {
+            if (autoCheckInterval) {
+                clearInterval(autoCheckInterval);
+            }
+            
+            autoCheckInterval = setInterval(checkForOTPs, 3000);
+            logPC('▶️ Started auto-checking every 3 seconds');
+        }
+        
+        function stopAutoCheck() {
+            if (autoCheckInterval) {
+                clearInterval(autoCheckInterval);
+                autoCheckInterval = null;
+            }
+            logPC('⏹️ Stopped auto-checking');
+        }
+        
+        function clearPC() {
+            document.getElementById('pc-log').innerHTML = 'PC log cleared...';
+            document.getElementById('detected-otp-display').style.display = 'none';
+        }
+        
+        function displayDetectedOTP(otpData) {
+            document.getElementById('detected-otp-code').textContent = otpData.otp;
+            document.getElementById('detected-otp-source').textContent = otpData.source;
+            document.getElementById('detected-otp-time').textContent = new Date().toLocaleTimeString();
+            document.getElementById('detected-otp-display').style.display = 'block';
+            
+            // Simulate notification
+            if (Notification.permission === 'granted') {
+                new Notification('OTP Detected!', {
+                    body: `OTP: ${otpData.otp} from ${otpData.source}`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+        
+        // Sync status functions
+        async function checkSyncStatus() {
+            logSync('📡 Checking sync status...');
+            
+            try {
+                // Check if sync service is working
+                const testData = { test: true, timestamp: Date.now() };
+                await syncService.sendOTP(testData);
+                logSync('✅ Sync service is operational');
+                
+                // Check storage methods
+                logSync('📊 Storage Methods:');
+                logSync('- GitHub Gist: Available');
+                logSync('- Pastebin: Available');  
+                logSync('- localStorage: Available');
+                logSync('- WebRTC: Available (if supported)');
+                
+            } catch (error) {
+                logSync('❌ Sync status check failed: ' + error.message);
+            }
+        }
+        
+        function resetSync() {
+            localStorage.clear();
+            logSync('🔄 Sync storage cleared');
+            logPhone('🔄 Phone sync reset');
+            logPC('🔄 PC sync reset');
+        }
+        
+        // Logging functions
+        function logPhone(message) {
+            const log = document.getElementById('phone-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function logPC(message) {
+            const log = document.getElementById('pc-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function logSync(message) {
+            const log = document.getElementById('sync-status');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

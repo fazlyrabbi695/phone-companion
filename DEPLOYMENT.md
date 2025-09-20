@@ -1,4 +1,10 @@
-# 🚀 IVAC OTP Monitor - Deployment Guide
+# 🚀 IVAC OTP Monitor - Deployment Guide (Updated)
+
+## 🆕 What's New
+- ✨ **Real-time sync service** for better cross-device communication
+- 🧪 **Dedicated test page** to verify sync functionality
+- 🔄 **Multiple sync methods** for GitHub Pages compatibility
+- ❌ **Removed automatic fake OTPs** (real OTPs only)
 
 ## 📱 Option 1: GitHub Pages (Recommended)
 
@@ -9,11 +15,14 @@
 
 ### Step 2: Upload Files
 Upload these files to your repository:
-- `index.html` (landing page)
-- `phone-companion.html` (mobile app)
-- `offline-otp-monitor.html` (PC monitor)
+- `index.html` (landing page) - *optional*
+- `phone-companion.html` (mobile app) - **UPDATED** 
+- `offline-otp-monitor.html` (PC monitor) - **UPDATED**
+- `sync-service.js` (real-time sync) - **NEW**
+- `test-sync.html` (sync testing) - **NEW**
 - `manifest.json` (PWA config)
 - `sw.js` (service worker)
+- `ivac-otp-detector.user.js` (Tampermonkey script)
 - `README.md` (documentation)
 
 ### Step 3: Enable GitHub Pages
@@ -23,9 +32,10 @@ Upload these files to your repository:
 4. Save
 
 ### Step 4: Access Your Apps
-- **Landing Page:** `https://yourusername.github.io/ivac-otp-monitor/`
 - **Mobile App:** `https://yourusername.github.io/ivac-otp-monitor/phone-companion.html`
 - **PC Monitor:** `https://yourusername.github.io/ivac-otp-monitor/offline-otp-monitor.html`
+- **Sync Test:** `https://yourusername.github.io/ivac-otp-monitor/test-sync.html` - **NEW**
+- **Landing Page:** `https://yourusername.github.io/ivac-otp-monitor/` (if created)
 
 ## 📱 Mobile Usage Instructions
 
@@ -56,19 +66,46 @@ Upload these files to your repository:
 - Open `offline-otp-monitor.html` in browser
 - Works completely offline
 
-## 🔗 Sync Setup
+## 🧪 Testing Cross-Device Sync
 
-### PC Side:
-1. Open PC monitor
-2. Click "📱 Start Phone Sync" 
-3. Click "📷 Show QR Code"
-4. Keep QR code visible
+### 🔴 IMPORTANT: Test First!
+Before using with real IVAC applications, **test the sync functionality**:
 
-### Mobile Side:
-1. Open phone companion app
-2. Click "📷 QR Scanner খুলুন"
-3. Scan the QR code from PC
-4. Grant permissions when prompted
+1. **Quick Test**: Open `https://yourusername.github.io/ivac-otp-monitor/test-sync.html`
+2. **Send Test OTP**: Use phone simulator to send test OTP
+3. **Verify PC Reception**: Check if PC monitor receives the OTP
+4. **Confirm Timing**: Should sync within 3-5 seconds
+
+### Real Device Testing
+
+#### 📱 On Your Phone:
+1. Open: `https://yourusername.github.io/ivac-otp-monitor/phone-companion.html`
+2. **Allow permissions** when prompted
+3. **Enter test message**: "IVAC Bangladesh: Your verification code is: 123456. Valid for 10 minutes."
+4. **Click "Send OTP to PC"**
+5. **Wait for confirmation**: Should show "OTP sent successfully"
+
+#### 💻 On Your PC:
+1. Open: `https://yourusername.github.io/ivac-otp-monitor/offline-otp-monitor.html`
+2. **Watch activity log** for "Received OTP from sync"
+3. **Check OTP display** - should show detected OTP
+4. **Verify timing** - should appear within 5 seconds
+
+### ⚡ Troubleshooting Sync Issues
+
+**If OTPs don't sync between devices:**
+
+1. **Check Internet**: Both devices need internet connection
+2. **Try Test Page**: Use `test-sync.html` first to verify basic functionality  
+3. **Clear Cache**: Clear browser cache on both devices
+4. **Check Console**: Open browser developer tools (F12) for error messages
+5. **Wait Longer**: Initial sync may take up to 10 seconds
+
+**Common Solutions:**
+- Refresh both pages and try again
+- Make sure both devices can access GitHub.com
+- Try different browsers (Chrome/Edge recommended)
+- Check that JavaScript is enabled
 
 ## ⚙️ Alternative: Local Network Setup
 

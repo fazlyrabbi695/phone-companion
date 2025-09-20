@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-title" content="IVAC OTP">
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2N2VlYSIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    <script src="./sync-service.js"></script>
     <title>📱 IVAC OTP Phone Companion</title>
     <style>
         * {
@@ -507,37 +508,55 @@
 
             addLog(`Sending OTP to PC: ${otp}`, 'info');
             
-            // Store OTP for PC to access via localStorage
-            const phoneMessages = JSON.parse(localStorage.getItem('phoneMessages') || '[]');
-            
-            const messageData = {
-                content: `IVAC Bangladesh: Your verification code is: ${otp}. This code will expire in 10 minutes. Please do not share this code with anyone.`,
+            // Send via multiple sync methods
+            const otpData = {
                 otp: otp,
                 source: 'Phone Companion',
                 timestamp: Date.now(),
-                processed: false,
-                fromPhone: true
+                content: `IVAC Bangladesh: Your verification code is: ${otp}. This code will expire in 10 minutes.`
             };
             
-            phoneMessages.unshift(messageData);
-            
-            // Keep only last 20 messages
-            if (phoneMessages.length > 20) {
-                phoneMessages.splice(20);
+            // Use sync service to send OTP
+            if (window.otpSyncService) {
+                window.otpSyncService.sendOTP(otpData).then(success => {
+                    if (success) {
+                        addLog(`OTP sent successfully via sync service: ${otp}`, 'success');
+                        alert(`✅ OTP sent to PC: ${otp}\n\nPC should receive it within 3 seconds!`);
+                    } else {
+                        addLog('Sync service failed, using fallback method', 'error');
+                        // Fallback to localStorage
+                        this.sendViaLocalStorageFallback(otpData);
+                    }
+                });
+            } else {
+                // Fallback if sync service not loaded
+                this.sendViaLocalStorageFallback(otpData);
             }
             
-            localStorage.setItem('phoneMessages', JSON.stringify(phoneMessages));
+            // Hide detected OTP
+            document.getElementById('detected-otp').classList.remove('show');
+        }
+        
+        function sendViaLocalStorageFallback(otpData) {
+            // Enhanced localStorage with cross-tab communication
+            const storageKey = 'phoneToPC_OTP';
+            const syncData = {
+                ...otpData,
+                syncId: localStorage.getItem('otpSyncId') || 'default',
+                timestamp: Date.now()
+            };
             
-            // Simulate sending to PC
-            setTimeout(() => {
-                addLog(`OTP stored for PC access: ${otp}`, 'success');
-                
-                // Hide detected OTP
-                document.getElementById('detected-otp').classList.remove('show');
-                
-                // Show success message
-                alert(`✅ OTP sent to PC: ${otp}\n\nPC will detect this OTP automatically!`);
-            }, 1000);
+            localStorage.setItem(storageKey, JSON.stringify(syncData));
+            localStorage.setItem(`${storageKey}_timestamp`, Date.now().toString());
+            
+            // Trigger storage event for cross-tab communication
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: storageKey,
+                newValue: JSON.stringify(syncData)
+            }));
+            
+            addLog('OTP sent via localStorage fallback', 'success');
+            alert(`✅ OTP sent via fallback method: ${otpData.otp}`);
         }
 
         function testOTPDetection() {
