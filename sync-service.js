@@ -4,11 +4,27 @@ class OTPSyncService {
         this.syncId = null;
         this.isPhone = this.detectDevice();
         this.syncInterval = null;
+        this.isInitialized = false;
         this.firebaseConfig = {
             // Free Realtime Database for sync
             databaseURL: 'https://ivac-otp-sync-default-rtdb.firebaseio.com/'
         };
-        this.init();
+        // Don't auto-init to allow manual initialization
+    }
+
+    // Add initialize method for compatibility
+    async initialize() {
+        try {
+            console.log(`Initializing OTP Sync Service (${this.isPhone ? 'Phone' : 'PC'})...`);
+            this.init();
+            this.isInitialized = true;
+            console.log('✅ OTP Sync Service initialized successfully');
+            return Promise.resolve();
+        } catch (error) {
+            console.error('❌ OTP Sync Service initialization failed:', error);
+            this.isInitialized = false;
+            return Promise.reject(error);
+        }
     }
 
     detectDevice() {
@@ -242,12 +258,18 @@ class OTPSyncService {
     }
 
     // Main sync methods
+    // Enhanced sendOTP for better error handling
     async sendOTP(otpData) {
+        if (!this.isInitialized) {
+            console.warn('Sync service not initialized, attempting to initialize...');
+            await this.initialize();
+        }
+        
         console.log('Sending OTP via multiple methods:', otpData);
         
         const syncData = {
             otp: otpData.otp,
-            source: otpData.source,
+            source: otpData.source || 'Unknown',
             timestamp: Date.now(),
             syncId: this.syncId,
             fromPhone: this.isPhone
@@ -260,18 +282,36 @@ class OTPSyncService {
             this.sendViaWebRTC(syncData)
         ];
 
-        const results = await Promise.allSettled(methods);
-        const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
-        
-        console.log(`OTP sent via ${successful.length} methods`);
-        return successful.length > 0;
+        try {
+            const results = await Promise.allSettled(methods);
+            const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
+            
+            console.log(`OTP sent via ${successful.length} methods successfully`);
+            return successful.length > 0;
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            return false;
+        }
     }
 
+    // Enhanced receiveOTP for better compatibility
     async receiveOTP() {
+        if (!this.isInitialized) {
+            console.warn('Sync service not initialized');
+            return [];
+        }
+        
         console.log('Checking for OTPs via multiple methods');
         
+        // Check localStorage first (most reliable for GitHub Pages)
+        const localData = await this.syncViaLocalStorage(null, 'read');
+        if (localData.success && localData.data) {
+            console.log('Found OTP in localStorage:', localData.data);
+            return [localData.data]; // Return as array for compatibility
+        }
+        
+        // Try other methods
         const methods = [
-            this.syncViaLocalStorage(null, 'read'),
             this.syncViaPastebin(null, 'read'),
             this.checkWebRTCMessages()
         ];
@@ -280,11 +320,12 @@ class OTPSyncService {
         
         for (const result of results) {
             if (result.status === 'fulfilled' && result.value.success && result.value.data) {
-                return result.value.data;
+                console.log('Found OTP via fallback method:', result.value.data);
+                return [result.value.data]; // Return as array
             }
         }
 
-        return null;
+        return []; // Return empty array instead of null
     }
 
     // Fallback: Enhanced localStorage with timestamp
@@ -387,3 +428,17 @@ class OTPSyncService {
 
 // Initialize global sync service
 window.otpSyncService = new OTPSyncService();
+
+// Export class for module usage
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = OTPSyncService;
+}
+
+console.log('OTP Sync Service loaded and ready for initialization');
+
+// Auto-initialize for backward compatibility
+setTimeout(() => {
+    if (window.otpSyncService && !window.otpSyncService.isInitialized) {
+        window.otpSyncService.initialize().catch(console.error);
+    }
+}, 1000);

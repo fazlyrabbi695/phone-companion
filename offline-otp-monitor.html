@@ -486,12 +486,24 @@
         // Initialize sync service for cross-device communication
         async function initializeSyncService() {
             try {
-                syncService = new OTPSyncService();
-                await syncService.initialize();
-                addLog('✅ Sync service initialized - ready for cross-device OTP sync', 'success');
+                // Wait for sync service to load
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                // Start polling for synced OTPs
-                startSyncPolling();
+                if (window.otpSyncService) {
+                    syncService = window.otpSyncService;
+                    
+                    if (!syncService.isInitialized) {
+                        await syncService.initialize();
+                    }
+                    
+                    addLog('✅ Sync service initialized - ready for cross-device OTP sync', 'success');
+                    
+                    // Start polling for synced OTPs
+                    startSyncPolling();
+                    
+                } else {
+                    throw new Error('Sync service not loaded');
+                }
                 
             } catch (error) {
                 addLog('❌ Sync service initialization failed: ' + error.message, 'error');
